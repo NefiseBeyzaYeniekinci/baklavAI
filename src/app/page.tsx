@@ -1,17 +1,38 @@
+"use client";
+
 import { ChatInterface } from "@/components/chat-interface";
 import { AddWordDialog } from "@/components/add-word-dialog";
+import { 
+  SidebarDialog, 
+  ChatsContent, 
+  DiscoverContent, 
+  SettingsContent, 
+  HelpContent 
+} from "@/components/sidebar-dialogs";
 import { 
   MessageSquarePlus, 
   MessageCircle, 
   Compass, 
-  BookMarked, 
   Settings, 
   HelpCircle,
   User,
   ChevronDown
 } from "lucide-react";
 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
 export default function Home() {
+  const handleNewChat = () => {
+    window.location.reload();
+  };
+
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background text-foreground p-0 md:p-3 md:pl-0 gap-2">
       {/* Premium Floating Sidebar */}
@@ -26,12 +47,30 @@ export default function Home() {
 
         {/* Action Area */}
         <div className="flex-1 overflow-y-auto px-6 flex flex-col gap-1.5 mt-2">
-          <SidebarButton icon={<MessageSquarePlus className="w-[18px] h-[18px]" />} label="Yeni Sohbet" active />
+          {/* Yeni Sohbet (Reloads to clear chat) */}
+          <div onClick={handleNewChat}>
+            <SidebarButton icon={<MessageSquarePlus className="w-[18px] h-[18px]" />} label="Yeni Sohbet" active />
+          </div>
           
           <div className="my-1 border-t border-border/30 mx-2"></div>
           
-          <SidebarButton icon={<MessageCircle className="w-[18px] h-[18px]" />} label="Sohbetler" />
-          <SidebarButton icon={<Compass className="w-[18px] h-[18px]" />} label="Keşfet" />
+          {/* Sohbetler Dialog */}
+          <SidebarDialog 
+            title="Geçmiş Sohbetler" 
+            description="Önceki muhabbetlerinize buradan ulaşabilirsiniz."
+            trigger={<SidebarButton icon={<MessageCircle className="w-[18px] h-[18px]" />} label="Sohbetler" />}
+          >
+            <ChatsContent />
+          </SidebarDialog>
+
+          {/* Keşfet Dialog */}
+          <SidebarDialog 
+            title="Gaziantep'i Keşfet" 
+            description="Yöresel kelimeler, deyimler ve popüler konular."
+            trigger={<SidebarButton icon={<Compass className="w-[18px] h-[18px]" />} label="Keşfet" />}
+          >
+            <DiscoverContent />
+          </SidebarDialog>
           
           {/* AddWordDialog inside SidebarButton look */}
           <div className="w-full">
@@ -40,21 +79,52 @@ export default function Home() {
 
           <div className="my-1 border-t border-border/30 mx-2"></div>
 
-          <SidebarButton icon={<Settings className="w-[18px] h-[18px]" />} label="Ayarlar" />
-          <SidebarButton icon={<HelpCircle className="w-[18px] h-[18px]" />} label="Yardım & Destek" />
+          {/* Ayarlar Dialog */}
+          <SidebarDialog 
+            title="Profil Ayarları" 
+            description="Kullanıcı adı, e-posta ve şifre bilgilerinizi güncelleyin."
+            trigger={<SidebarButton icon={<Settings className="w-[18px] h-[18px]" />} label="Ayarlar" />}
+          >
+            <SettingsContent />
+          </SidebarDialog>
+
+          {/* Yardım Dialog */}
+          <SidebarDialog 
+            title="Yardım & Destek" 
+            trigger={<SidebarButton icon={<HelpCircle className="w-[18px] h-[18px]" />} label="Yardım & Destek" />}
+          >
+            <HelpContent />
+          </SidebarDialog>
         </div>
 
         {/* Footer Profile Area */}
         <div className="p-6 pt-2">
-          <button className="w-full flex items-center justify-between px-4 py-3 bg-transparent hover:bg-muted/50 rounded-2xl transition-colors">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
-                <User className="w-4 h-4" />
-              </div>
-              <span className="text-sm font-medium text-foreground/80">Kullanıcı</span>
-            </div>
-            <ChevronDown className="w-4 h-4 text-muted-foreground/60" />
-          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="w-full flex items-center justify-between px-4 py-3 bg-transparent hover:bg-muted/50 outline-none rounded-2xl transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
+                    <User className="w-4 h-4" />
+                  </div>
+                  <span className="text-sm font-medium text-foreground/80">Kullanıcı</span>
+                </div>
+                <ChevronDown className="w-4 h-4 text-muted-foreground/60" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-[240px] rounded-2xl p-2 shadow-lg">
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none">BaklavAI Kullanıcısı</p>
+                  <p className="text-xs leading-none text-muted-foreground">kullanici@ornek.com</p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="cursor-pointer rounded-xl">Profilimi Görüntüle</DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer rounded-xl">Abonelik (Premium)</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="cursor-pointer rounded-xl text-red-600 focus:text-red-600 focus:bg-red-50">Çıkış Yap</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </aside>
 
@@ -80,16 +150,24 @@ export default function Home() {
 }
 
 // Helper component for Sidebar items
-function SidebarButton({ icon, label, active = false }: { icon: React.ReactNode, label: string, active?: boolean }) {
-  return (
-    <button 
-      className={`flex items-center gap-4 px-4 py-3.5 rounded-[1.25rem] transition-all duration-200 w-full text-left
-      ${active 
-        ? "bg-secondary text-primary font-medium shadow-[0_2px_10px_rgba(92,179,56,0.05)]" 
-        : "bg-transparent text-muted-foreground hover:bg-muted/40 hover:text-foreground"}`}
-    >
-      <span className={active ? "text-primary" : "text-muted-foreground/70"}>{icon}</span>
-      <span className="text-[15px]">{label}</span>
-    </button>
-  );
-}
+// We wrap it in forwardRef so DialogTrigger can inject props into it
+import { forwardRef } from "react";
+
+const SidebarButton = forwardRef<HTMLButtonElement, { icon: React.ReactNode, label: string, active?: boolean, onClick?: () => void }>(
+  ({ icon, label, active = false, ...props }, ref) => {
+    return (
+      <button 
+        ref={ref}
+        {...props}
+        className={`flex items-center gap-4 px-4 py-3.5 rounded-[1.25rem] transition-all duration-200 w-full text-left
+        ${active 
+          ? "bg-secondary text-primary font-medium shadow-[0_2px_10px_rgba(92,179,56,0.05)]" 
+          : "bg-transparent text-muted-foreground hover:bg-muted/40 hover:text-foreground"}`}
+      >
+        <span className={active ? "text-primary" : "text-muted-foreground/70"}>{icon}</span>
+        <span className="text-[15px]">{label}</span>
+      </button>
+    );
+  }
+);
+SidebarButton.displayName = "SidebarButton";

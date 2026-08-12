@@ -1,36 +1,39 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# BaklavAI
 
-## Getting Started
+Gaziantep kültürünü, şivesini ve sıcaklığını dijital dünyaya taşıyan yöresel yapay zeka asistanı.
 
-First, run the development server:
+## Proje Hakkında
+
+BaklavAI, standart, ruhsuz yapay zeka arayüzlerinin aksine; tıpkı bir Antepli gibi konuşan, yöresel kelimeleri anlayan ve size "canım ciğerim" samimiyetiyle yaklaşan özel bir sohbet asistanıdır.
+
+Projenin arayüzü, modern mesajlaşma uygulamaları (ChatGPT, Gemini, WhatsApp) standartlarında, ferah "Taze Fıstık Yeşili ve Şerbet" teması baz alınarak tasarlanmıştır.
+
+## Özellikler
+
+- **Yöresel Yapay Zeka Sohbeti:** Size Antep ağzıyla cevap veren ana sohbet alanı.
+- **Sözlüğe Ekle:** Bilinmeyen veya yapay zekanın öğrenmesini istediğiniz yöresel kelimeleri sisteme öğretebileceğiniz özel form.
+- **Günün Kelimesi ve Keşfet:** Gaziantep kültürüne ait popüler konuları (#Tarihi Çarşılar vs.) ve yöresel kelimeleri tek tıkla sohbete dönüştürebilme.
+- **Geçmiş Sohbetler:** Önceki konulara (örn: Küşleme nerede yenir?) hızlıca geri dönebilme.
+- **Modern ve Organik Arayüz:** Keskin köşelerin olmadığı, göz yormayan soft renkler, yumuşak gölgeler ve kapsül butonlarla bezenmiş premium tasarım.
+
+## Kullanılan Teknolojiler
+
+- **Framework:** Next.js 15 (App Router)
+- **Dil:** TypeScript
+- **Stil & Tasarım:** Tailwind CSS
+- **Bileşen Kütüphanesi:** Shadcn UI & Base UI
+- **İkonlar:** Lucide React
+
+## Geliştirme
+
+Projeyi bilgisayarınızda çalıştırmak için:
 
 ```bash
+# Bağımlılıkları yükleyin
+npm install
+
+# Geliştirme sunucusunu başlatın
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Sunucu başladıktan sonra tarayıcınızdan `http://localhost:3000` adresine giderek arayüzü görüntüleyebilirsiniz.

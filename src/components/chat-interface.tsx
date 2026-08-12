@@ -24,14 +24,48 @@ const INITIAL_MESSAGES: Message[] = [
 export function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES)
   const [input, setInput] = useState("")
-  const scrollRef = useRef<HTMLDivElement>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
   // Auto-scroll to bottom
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
+
+  // Listen for custom events from other components (like sidebar)
+  useEffect(() => {
+    const handleSendCustomMessage = (e: CustomEvent) => {
+      const text = e.detail;
+      if (!text) return;
+      
+      const now = new Date();
+      const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      const newUserMsg: Message = { 
+        id: Date.now().toString(), 
+        role: "user", 
+        content: text,
+        time: timeString
+      };
+      
+      setMessages((prev) => [...prev, newUserMsg]);
+
+      // Fake AI Response
+      setTimeout(() => {
+        const aiTime = new Date();
+        const aiTimeString = aiTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const fakeAiMsg: Message = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: `"${text}" hakkında sana hemen Antep usulü bilgi veriyim canım ciğerim...`,
+          time: aiTimeString
+        };
+        setMessages((prev) => [...prev, fakeAiMsg]);
+      }, 1000);
+    };
+
+    window.addEventListener('send-chat-message', handleSendCustomMessage as EventListener);
+    return () => window.removeEventListener('send-chat-message', handleSendCustomMessage as EventListener);
+  }, []);
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault()
@@ -68,7 +102,7 @@ export function ChatInterface() {
     <div className="flex flex-col h-full relative bg-transparent">
       
       {/* Chat Messages Area */}
-      <ScrollArea className="flex-1 w-full z-10 px-4 md:px-12" ref={scrollRef}>
+      <ScrollArea className="flex-1 w-full z-10 px-4 md:px-12">
         <div className="flex flex-col py-10 gap-6 pb-32 max-w-[850px] mx-auto">
           
           {messages.map((msg) => (
@@ -94,6 +128,7 @@ export function ChatInterface() {
               </div>
             </div>
           ))}
+          <div ref={messagesEndRef} />
         </div>
       </ScrollArea>
 
