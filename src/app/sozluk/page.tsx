@@ -489,8 +489,8 @@ export default function SozlukPage() {
             onClick={() => setShowAddForm(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-primary hover:bg-primary/90 text-white text-xs md:text-sm font-semibold transition-all shadow-xs hover:shadow-md hover:scale-[1.02] active:scale-95 cursor-pointer"
           >
-            <Plus className="w-4 h-4" />
-            <span>Kelime / Deyim Ekle</span>
+            <Plus className="w-4 h-4 shrink-0" />
+            <span><span className="hidden sm:inline">Kelime / Deyim </span>Ekle</span>
           </button>
         </div>
       </header>

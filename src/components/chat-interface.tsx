@@ -277,14 +277,14 @@ export function ChatInterface() {
         placeholder={isLoading ? "BaklavAI cevap veriyor..." : "BaklavAI'ye bir şeyler sor rafık..."}
         disabled={isLoading}
         autoFocus={isCentered}
-        className="flex-1 bg-transparent border-0 outline-none text-[15.5px] text-foreground placeholder:text-[#A0AEC0] disabled:opacity-60"
+        className="flex-1 bg-transparent border-0 outline-none text-base text-foreground placeholder:text-[#A0AEC0] disabled:opacity-60 min-w-0"
       />
       
       {/* Send Button */}
       <button 
         type="submit" 
         disabled={!input.trim() || isLoading}
-        className="flex items-center justify-center w-[44px] h-[44px] rounded-full bg-[#5CB338] hover:bg-[#4E9B2F] text-white shadow-xs transition-all active:scale-95 disabled:opacity-40 disabled:pointer-events-none cursor-pointer shrink-0"
+        className="flex items-center justify-center w-[42px] h-[42px] sm:w-[44px] sm:h-[44px] rounded-full bg-[#5CB338] hover:bg-[#4E9B2F] text-white shadow-xs transition-all active:scale-95 disabled:opacity-40 disabled:pointer-events-none cursor-pointer shrink-0"
       >
         {isLoading ? (
           <Loader2 className="w-5 h-5 animate-spin" />
@@ -303,7 +303,7 @@ export function ChatInterface() {
         <div className="flex-1 flex flex-col items-center justify-center px-4 w-full max-w-[760px] mx-auto text-center animate-in fade-in duration-400">
           
           {/* Headline matching Gemini's minimalist style: Nerden başliyak rafık? */}
-          <h1 className="text-3xl md:text-4xl font-normal tracking-tight text-foreground/90 mb-8">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-normal tracking-tight text-foreground/90 mb-6 sm:mb-8">
             Nerden başliyak <span className="text-primary font-medium">rafık?</span>
           </h1>
 
@@ -319,9 +319,9 @@ export function ChatInterface() {
           <div 
             ref={scrollContainerRef}
             onScroll={handleScroll}
-            className="flex-1 overflow-y-auto min-h-0 w-full px-4 md:px-12 overscroll-contain"
+            className="flex-1 overflow-y-auto min-h-0 w-full px-3 sm:px-6 md:px-12 overscroll-contain"
           >
-            <div className="flex flex-col py-8 gap-8 max-w-[850px] mx-auto min-h-full">
+            <div className="flex flex-col py-4 sm:py-8 gap-5 sm:gap-8 max-w-[850px] mx-auto min-h-full">
               {messages.map((msg) => {
                 // Modern Minimal Typing Indicator
                 if (msg.role === "assistant" && !msg.content) {
@@ -454,7 +454,7 @@ export function ChatInterface() {
           )}
 
           {/* Fixed Bottom Input Area (During active conversation) */}
-          <div className="shrink-0 w-full px-4 pt-2 pb-6 z-20 flex justify-center bg-gradient-to-t from-background via-background/95 to-transparent">
+          <div className="shrink-0 w-full px-3 sm:px-4 pt-2 pb-3 sm:pb-6 z-20 flex justify-center bg-gradient-to-t from-background via-background/95 to-transparent">
             <div className="w-full max-w-[850px]">
               {renderInputForm(false)}
             </div>

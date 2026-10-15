@@ -15,7 +15,10 @@ import {
   HelpCircle,
   User,
   ChevronDown,
-  BookOpen
+  BookOpen,
+  Menu,
+  X,
+  Sparkles
 } from "lucide-react";
 
 import { useState, useEffect } from "react";
@@ -30,6 +33,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export default function Home() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userProfile, setUserProfile] = useState({
     name: "BaklavAI Kullanıcısı",
     email: "kullanici@ornek.com",
@@ -163,31 +167,153 @@ export default function Home() {
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col h-full relative bg-transparent overflow-hidden min-h-0">
-        {/* Mobile Header (Hidden on Desktop) */}
-        <header className="md:hidden h-16 shrink-0 flex items-center justify-between border-b border-border/40 bg-card/80 backdrop-blur-md z-10 px-4 mx-2 rounded-b-3xl">
+        {/* Mobile Header (Shown on Mobile & Tablet < md) */}
+        <header className="md:hidden h-14 shrink-0 flex items-center justify-between border-b border-border/40 bg-card/80 backdrop-blur-md z-10 px-3 mx-2 mt-1 rounded-2xl">
           <div className="flex items-center gap-2">
-            <div className="text-2xl">🥮</div>
-            <h1 className="font-semibold text-lg tracking-tight">
-              baklav<span className="text-primary font-bold">AI</span>
-            </h1>
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="p-2 rounded-xl hover:bg-muted text-foreground transition-colors cursor-pointer"
+              title="Menüyü Aç"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <div className="flex items-center gap-1.5">
+              <span className="text-2xl">🥮</span>
+              <h1 className="font-semibold text-base tracking-tight text-foreground">
+                baklav<span className="text-primary font-bold">AI</span>
+              </h1>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <Link 
               href="/sozluk"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary text-primary text-xs font-semibold hover:bg-secondary/80 transition-colors"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-secondary text-primary text-xs font-semibold hover:bg-secondary/80 transition-colors"
             >
               <BookOpen className="w-3.5 h-3.5" />
               <span>Sözlük</span>
             </Link>
             <Link 
               href="/giris"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors shadow-sm"
+              className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors shadow-xs"
             >
               <User className="w-3.5 h-3.5" />
-              <span>Giriş</span>
+              <span>{userProfile.name.split(" ")[0] || "Giriş"}</span>
             </Link>
           </div>
         </header>
+
+        {/* Mobile & Tablet Slide-Over Drawer */}
+        {mobileMenuOpen && (
+          <div className="fixed inset-0 z-50 md:hidden flex">
+            {/* Backdrop */}
+            <div 
+              className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+              onClick={() => setMobileMenuOpen(false)}
+            />
+
+            {/* Slide-out Panel */}
+            <div className="relative w-[300px] max-w-[85vw] bg-card h-full flex flex-col z-10 shadow-2xl animate-in slide-in-from-left duration-200">
+              {/* Drawer Top Branding */}
+              <div className="p-5 flex items-center justify-between border-b border-border/40">
+                <div className="flex items-center gap-2.5">
+                  <span className="text-3xl">🥮</span>
+                  <div>
+                    <h2 className="font-bold text-lg leading-tight text-foreground">
+                      baklav<span className="text-primary">AI</span>
+                    </h2>
+                    <p className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider">
+                      Gaziantep Asistanı
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="p-2 rounded-full hover:bg-muted text-muted-foreground cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Drawer Navigation Links */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-1.5">
+                <div onClick={() => { handleNewChat(); setMobileMenuOpen(false); }}>
+                  <SidebarButton icon={<MessageSquarePlus className="w-[18px] h-[18px]" />} label="Yeni Sohbet" active />
+                </div>
+
+                <div className="my-2 border-t border-border/30"></div>
+
+                <SidebarDialog 
+                  title="Geçmiş Sohbetler" 
+                  description="Önceki muhabbetlerinize buradan ulaşabilirsiniz."
+                  trigger={<SidebarButton icon={<MessageCircle className="w-[18px] h-[18px]" />} label="Sohbetler" />}
+                >
+                  <ChatsContent />
+                </SidebarDialog>
+
+                <Link href="/sozluk" className="w-full block" onClick={() => setMobileMenuOpen(false)}>
+                  <SidebarButton icon={<BookOpen className="w-[18px] h-[18px]" />} label="Antep Sözlüğü" />
+                </Link>
+
+                <div className="my-2 border-t border-border/30"></div>
+
+                <Link href="/profil" className="w-full block" onClick={() => setMobileMenuOpen(false)}>
+                  <SidebarButton icon={<Settings className="w-[18px] h-[18px]" />} label="Profil & Rozetler" />
+                </Link>
+
+                <SidebarDialog 
+                  title="Yardım & Destek" 
+                  trigger={<SidebarButton icon={<HelpCircle className="w-[18px] h-[18px]" />} label="Yardım & Destek" />}
+                >
+                  <HelpContent />
+                </SidebarDialog>
+              </div>
+
+              {/* Drawer Footer User Card */}
+              <div className="p-4 border-t border-border/40 bg-muted/20">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-full bg-secondary text-primary font-bold flex items-center justify-center text-sm border border-primary/20 overflow-hidden">
+                      {userProfile.avatarDataUrl ? (
+                        <img src={userProfile.avatarDataUrl} alt={userProfile.name} className="w-full h-full object-cover" />
+                      ) : (
+                        userProfile.name.charAt(0).toUpperCase()
+                      )}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-xs font-semibold text-foreground truncate max-w-[130px]">
+                        {userProfile.name}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground truncate max-w-[130px]">
+                        {userProfile.email}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <Link
+                    href="/giris"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="py-2 text-center text-xs font-medium bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors"
+                  >
+                    Giriş / Hesap
+                  </Link>
+                  <Link
+                    href="/giris"
+                    onClick={() => {
+                      localStorage.removeItem("baklavai_profile");
+                      window.dispatchEvent(new Event("profile-updated"));
+                      setMobileMenuOpen(false);
+                    }}
+                    className="py-2 text-center text-xs font-medium border border-border text-red-600 rounded-xl hover:bg-red-50 transition-colors"
+                  >
+                    Çıkış Yap
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Chat Interface */}
         <div className="flex-1 w-full h-full min-h-0 flex flex-col">
