@@ -13,18 +13,23 @@ import {
   Sparkles,
   CheckCircle2,
   AlertCircle,
-  Coffee,
-  BookOpen,
-  Award,
   ShieldCheck,
   ChevronLeft,
-  Flame,
+  X,
   HelpCircle,
-  X
+  Image as ImageIcon
 } from "lucide-react";
 import { supabase } from "@/lib/db";
 
 const STORAGE_KEY = "baklavai_profile";
+
+// Gaziantep arka plan görselleri seçenekleri
+const BG_IMAGES = [
+  { id: "kale", name: "Gaziantep Kalesi", url: "/images/kesfet/gaziantep-kalesi.jpg" },
+  { id: "rumkale", name: "Rumkale & Fırat", url: "/images/kesfet/rumkale.jpg" },
+  { id: "carsi", name: "Bakırcılar Çarşısı", url: "/images/kesfet/bakircilar-carsisi.jpg" },
+  { id: "baklava", name: "Antep Baklavası", url: "/images/kesfet/baklava.jpg" }
+];
 
 export default function GirisPage() {
   const router = useRouter();
@@ -32,13 +37,15 @@ export default function GirisPage() {
   // Mode: "login" | "register"
   const [mode, setMode] = useState<"login" | "register">("login");
 
+  // Arka plan görseli
+  const [selectedBg, setSelectedBg] = useState(BG_IMAGES[0]);
+
   // Form states
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
-  const [acceptTerms, setAcceptTerms] = useState(false);
 
   // UI states
   const [showPassword, setShowPassword] = useState(false);
@@ -50,7 +57,7 @@ export default function GirisPage() {
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotSent, setForgotSent] = useState(false);
 
-  // Check if rememberMe email is saved
+  // Beni hatırla kontrolü
   useEffect(() => {
     try {
       const savedEmail = localStorage.getItem("baklavai_remembered_email");
@@ -61,7 +68,7 @@ export default function GirisPage() {
     } catch {}
   }, []);
 
-  // Handle Login
+  // Giriş Yap
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
@@ -75,7 +82,6 @@ export default function GirisPage() {
     setLoading(true);
 
     try {
-      // 1. Try Supabase Auth
       let authUser = null;
       try {
         const { data, error } = await supabase.auth.signInWithPassword({
@@ -86,17 +92,15 @@ export default function GirisPage() {
           authUser = data.user;
         }
       } catch (authErr) {
-        console.warn("Supabase auth offline or disabled, proceeding with smart profile sync:", authErr);
+        console.warn("Supabase auth offline or disabled:", authErr);
       }
 
-      // Handle Remember Me
       if (rememberMe) {
         localStorage.setItem("baklavai_remembered_email", email.trim());
       } else {
         localStorage.removeItem("baklavai_remembered_email");
       }
 
-      // 2. Set Local Profile
       const displayName = authUser?.user_metadata?.full_name || email.split("@")[0] || "BaklavAI Kullanıcısı";
       const profile = {
         name: displayName.charAt(0).toUpperCase() + displayName.slice(1),
@@ -107,10 +111,10 @@ export default function GirisPage() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
       window.dispatchEvent(new Event("profile-updated"));
 
-      setSuccessMsg("Giriş başarılı! Gaziantep sofrasına yönlendiriliyorsunuz...");
+      setSuccessMsg("Giriş başarılı! Soframıza yönlendiriliyorsunuz...");
       setTimeout(() => {
         router.push("/");
-      }, 1000);
+      }, 900);
     } catch (err: any) {
       setErrorMsg(err.message || "Giriş yapılırken bir sorun oluştu.");
     } finally {
@@ -118,7 +122,7 @@ export default function GirisPage() {
     }
   };
 
-  // Handle Register
+  // Kayıt Ol
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
@@ -133,37 +137,29 @@ export default function GirisPage() {
       return;
     }
     if (password.length < 6) {
-      setErrorMsg("Şifreniz en az 6 karakterden oluşmalıdır.");
+      setErrorMsg("Şifreniz en az 6 karakter olmalıdır.");
       return;
     }
     if (password !== confirmPassword) {
-      setErrorMsg("Girdiğiniz şifreler birbiriyle eşleşmiyor.");
-      return;
-    }
-    if (!acceptTerms) {
-      setErrorMsg("Lütfen kullanım koşullarını kabul ettiğinizi onaylayın.");
+      setErrorMsg("Girdiğiniz şifreler eşleşmiyor.");
       return;
     }
 
     setLoading(true);
 
     try {
-      // 1. Try Supabase Sign Up
       try {
         await supabase.auth.signUp({
           email: email.trim(),
           password: password,
           options: {
-            data: {
-              full_name: name.trim(),
-            },
+            data: { full_name: name.trim() },
           },
         });
       } catch (authErr) {
         console.warn("Supabase auth signup notice:", authErr);
       }
 
-      // 2. Save Profile
       const profile = {
         name: name.trim(),
         email: email.trim(),
@@ -176,10 +172,10 @@ export default function GirisPage() {
       }
       window.dispatchEvent(new Event("profile-updated"));
 
-      setSuccessMsg("Hesabınız başarıyla oluşturuldu! Hoş geldiniz.");
+      setSuccessMsg("Hesabınız oluşturuldu! Hoş geldiniz.");
       setTimeout(() => {
         router.push("/");
-      }, 1200);
+      }, 1000);
     } catch (err: any) {
       setErrorMsg(err.message || "Kayıt olunurken bir hata oluştu.");
     } finally {
@@ -187,7 +183,7 @@ export default function GirisPage() {
     }
   };
 
-  // Guest Quick Login
+  // Misafir Girişi
   const handleGuestLogin = () => {
     const guestProfile = {
       name: "Misafir Rafık",
@@ -199,7 +195,7 @@ export default function GirisPage() {
     router.push("/");
   };
 
-  // Handle Forgot Password
+  // Şifremi Unuttum
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!forgotEmail) return;
@@ -214,160 +210,83 @@ export default function GirisPage() {
     setTimeout(() => {
       setForgotSent(false);
       setShowForgotModal(false);
-    }, 3000);
+    }, 2800);
   };
 
   return (
-    <div className="min-h-screen w-full flex bg-[#F8FAF8] text-foreground font-sans selection:bg-[#5CB338]/20 selection:text-[#2E6F40]">
-      {/* ── Left Hero Side (Showcase & Brand) ───────────────────────────────── */}
-      <div className="hidden lg:flex lg:w-1/2 relative bg-[#0D1F13] text-white flex-col justify-between p-12 overflow-hidden border-r border-[#1B3A25]/50">
-        {/* Ambient Gradient Lights */}
-        <div className="absolute -top-32 -left-32 w-96 h-96 bg-[#5CB338]/25 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute top-1/2 -right-32 w-[420px] h-[420px] bg-[#E6A15C]/15 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-32 left-1/3 w-80 h-80 bg-[#2E6F40]/30 rounded-full blur-3xl pointer-events-none" />
+    <div className="relative min-h-screen w-full flex items-center justify-center p-4 sm:p-6 overflow-hidden">
+      {/* ── Background Image & Translucent Overlays ────────────────────── */}
+      <div
+        className="absolute inset-0 bg-cover bg-center transition-all duration-700 scale-105"
+        style={{ backgroundImage: `url(${selectedBg.url})` }}
+      />
+      {/* Soft gradient darken overlay with blur */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/75 backdrop-blur-[4px]" />
+      <div className="absolute inset-0 bg-[#0F2617]/35 mix-blend-multiply" />
 
-        {/* Brand Top Header */}
-        <div className="relative z-10 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-[#2E6F40] to-[#5CB338] flex items-center justify-center text-2xl shadow-lg shadow-[#5CB338]/30 group-hover:scale-105 transition-transform duration-300">
-              🥮
-            </div>
-            <div>
-              <span className="font-extrabold text-2xl tracking-tight text-white">
-                baklav<span className="text-[#72DC48]">AI</span>
-              </span>
-              <p className="text-[11px] font-medium text-emerald-300/70 tracking-wide uppercase">
-                Gaziantep Yapay Zekası
-              </p>
-            </div>
-          </Link>
+      {/* Top Navbar / Back Link */}
+      <header className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between p-6 max-w-7xl mx-auto w-full">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 text-xs sm:text-sm font-medium text-white/80 hover:text-white transition-all bg-black/30 hover:bg-black/50 backdrop-blur-md px-4 py-2 rounded-full border border-white/10"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          <span>Ana Sayfaya Dön</span>
+        </Link>
 
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-xs text-emerald-200">
-            <span className="w-2 h-2 rounded-full bg-[#5CB338] animate-ping" />
-            <span className="font-medium">v2.0 Canlı & Akıllı</span>
-          </div>
+        {/* Background Image Switcher Chip */}
+        <div className="hidden sm:flex items-center gap-1.5 bg-black/40 backdrop-blur-md p-1 rounded-full border border-white/10 text-xs text-white/80">
+          <span className="px-2.5 py-1 text-[11px] text-white/60 font-medium flex items-center gap-1">
+            <ImageIcon className="w-3 h-3" />
+            <span>Manzara:</span>
+          </span>
+          {BG_IMAGES.map((bg) => (
+            <button
+              key={bg.id}
+              onClick={() => setSelectedBg(bg)}
+              className={`px-3 py-1 rounded-full text-[11px] font-medium transition-all cursor-pointer ${
+                selectedBg.id === bg.id
+                  ? "bg-[#5CB338] text-white font-semibold shadow-sm"
+                  : "text-white/70 hover:text-white hover:bg-white/10"
+              }`}
+            >
+              {bg.name.split(" ")[0]}
+            </button>
+          ))}
         </div>
+      </header>
 
-        {/* Center Content / Hero Cards */}
-        <div className="relative z-10 my-auto py-8 space-y-8 max-w-lg">
-          <div className="space-y-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-[#5CB338]/15 border border-[#5CB338]/30 text-xs font-semibold text-[#86E45E]">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Gaziantep Kültürünün Dijital Kalbi</span>
-            </div>
-            <h1 className="text-4xl xl:text-5xl font-black tracking-tight leading-[1.15] text-white">
-              Antep'in Sıcaklığı, <br />
-              <span className="bg-gradient-to-r from-[#86E45E] via-[#F2C94C] to-[#5CB338] bg-clip-text text-transparent">
-                Yapay Zekanın Gücüyle
-              </span>
-            </h1>
-            <p className="text-emerald-100/70 text-sm md:text-base leading-relaxed">
-              Tahmis Kahvesi kokulu sohbetlerden tarihi hanların rehberine, asırlık Antep ağzı sözlüğünden yöresel yemek tariflerine kadar her şey bir tık uzağında.
-            </p>
-          </div>
-
-          {/* Interactive Feature Pills */}
-          <div className="grid grid-cols-1 gap-3.5 pt-2">
-            <div className="flex items-center gap-3.5 p-3.5 rounded-2xl bg-white/[0.04] backdrop-blur-md border border-white/[0.08] hover:bg-white/[0.08] transition-colors">
-              <div className="w-10 h-10 rounded-xl bg-[#5CB338]/20 border border-[#5CB338]/40 flex items-center justify-center text-[#86E45E] shrink-0">
-                <Coffee className="w-5 h-5" />
+      {/* ── Centered Auth Card ────────────────────────────────────────── */}
+      <div className="relative z-20 w-full max-w-[440px] my-auto">
+        <div className="rounded-[2.5rem] bg-white/95 dark:bg-[#111C14]/90 backdrop-blur-2xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.5)] border border-white/40 dark:border-white/10 p-7 sm:p-9 text-foreground transition-all">
+          
+          {/* Card Header (Logo & Title) */}
+          <div className="text-center mb-6">
+            <Link href="/" className="inline-flex items-center justify-center gap-2.5 mb-2 group">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#2E6F40] to-[#5CB338] flex items-center justify-center text-2xl shadow-md shadow-[#5CB338]/30 group-hover:scale-105 transition-transform duration-200">
+                🥮
               </div>
-              <div>
-                <h4 className="text-sm font-semibold text-white">Hakiki Antep Şivesiyle Sohbet</h4>
-                <p className="text-xs text-emerald-200/60">Yapay zeka robotik değil; tam bir Antepli usta gibi samimi konuşur.</p>
+              <div className="text-left">
+                <span className="font-extrabold text-2xl tracking-tight text-foreground block leading-none">
+                  baklav<span className="text-[#5CB338]">AI</span>
+                </span>
+                <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
+                  Gaziantep Yapay Zekası
+                </span>
               </div>
-            </div>
+            </Link>
 
-            <div className="flex items-center gap-3.5 p-3.5 rounded-2xl bg-white/[0.04] backdrop-blur-md border border-white/[0.08] hover:bg-white/[0.08] transition-colors">
-              <div className="w-10 h-10 rounded-xl bg-[#E6A15C]/20 border border-[#E6A15C]/40 flex items-center justify-center text-[#E6A15C] shrink-0">
-                <BookOpen className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-sm font-semibold text-white">Antep Ağzı Sözlüğü</h4>
-                <p className="text-xs text-emerald-200/60">500+ kelimeyi keşfet, oyla, yeni kelimeler katarak asistanı eğit.</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3.5 p-3.5 rounded-2xl bg-white/[0.04] backdrop-blur-md border border-white/[0.08] hover:bg-white/[0.08] transition-colors">
-              <div className="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-300 shrink-0">
-                <Award className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-sm font-semibold text-white">Kültür ve Lezzet Rozetleri</h4>
-                <p className="text-xs text-emerald-200/60">Sohbet ettikçe ve Antep'i tanıdıkça kadim ustalık rozetleri kazan.</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Authentic Antep Quote Card */}
-          <div className="p-4 rounded-2xl bg-gradient-to-r from-[#173822]/60 to-[#0F2617]/60 border border-[#2E6F40]/40 backdrop-blur-sm">
-            <div className="flex items-center gap-2 text-xs font-semibold text-[#86E45E] mb-1">
-              <Flame className="w-4 h-4" />
-              <span>Gaziantep Ustalarından</span>
-            </div>
-            <p className="text-xs italic text-emerald-100/80 leading-relaxed">
-              "Antep'e gitmeyen lezzeti bilmez, BaklavAI ile konuşmayan şiveyi çözemez yorum! Hoş geldin soframıza."
-            </p>
-          </div>
-        </div>
-
-        {/* Footer Statistics */}
-        <div className="relative z-10 pt-6 border-t border-white/[0.08] flex items-center justify-between text-xs text-emerald-200/60">
-          <div>
-            <span className="font-bold text-white text-base">10.000+</span>
-            <p>Canlı Sohbet</p>
-          </div>
-          <div className="w-px h-8 bg-white/10" />
-          <div>
-            <span className="font-bold text-white text-base">500+</span>
-            <p>Yöresel Kelime</p>
-          </div>
-          <div className="w-px h-8 bg-white/10" />
-          <div>
-            <span className="font-bold text-white text-base">⭐ 4.9/5</span>
-            <p>Kullanıcı Memnuniyeti</p>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Right Auth Form Side ───────────────────────────────────────────── */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-between p-6 sm:p-12 lg:p-16 overflow-y-auto">
-        {/* Top Navigation */}
-        <div className="flex items-center justify-between">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-full hover:bg-muted"
-          >
-            <ChevronLeft className="w-4 h-4" />
-            <span>Ana Sayfaya Dön</span>
-          </Link>
-
-          <div className="lg:hidden flex items-center gap-2">
-            <div className="text-2xl">🥮</div>
-            <span className="font-bold text-lg">
-              baklav<span className="text-primary">AI</span>
-            </span>
-          </div>
-        </div>
-
-        {/* Main Form Container */}
-        <div className="my-auto max-w-md w-full mx-auto py-8">
-          {/* Form Header */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-secondary text-primary mb-4 shadow-sm border border-primary/20">
-              <Sparkles className="w-7 h-7" />
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
-              {mode === "login" ? "Hoş Geldin Rafık!" : "Soframıza Katıl"}
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground mt-3">
+              {mode === "login" ? "Hoş Geldin Rafık" : "Yeni Hesap Oluştur"}
             </h2>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-2">
+            <p className="text-xs text-muted-foreground mt-1">
               {mode === "login"
-                ? "Gaziantep'in yapay zekasıyla sohbete başlamak için giriş yap."
-                : "Hemen ücretsiz hesabını aç, Antep kültürünü keşfetmeye başla."}
+                ? "Sohbete başlamak için bilgilerini gir."
+                : "Gaziantep kültürünü keşfetmeye hemen başla."}
             </p>
 
-            {/* Mode Switcher Tabs */}
-            <div className="flex p-1.5 mt-6 rounded-2xl bg-muted/80 border border-border/40">
+            {/* Segmented Mode Switcher */}
+            <div className="flex p-1 mt-5 rounded-2xl bg-muted/80 border border-border/50">
               <button
                 type="button"
                 onClick={() => {
@@ -375,7 +294,7 @@ export default function GirisPage() {
                   setErrorMsg("");
                   setSuccessMsg("");
                 }}
-                className={`flex-1 py-2.5 text-xs sm:text-sm font-semibold rounded-xl transition-all duration-200 cursor-pointer ${
+                className={`flex-1 py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
                   mode === "login"
                     ? "bg-card text-foreground shadow-sm font-bold"
                     : "text-muted-foreground hover:text-foreground"
@@ -390,7 +309,7 @@ export default function GirisPage() {
                   setErrorMsg("");
                   setSuccessMsg("");
                 }}
-                className={`flex-1 py-2.5 text-xs sm:text-sm font-semibold rounded-xl transition-all duration-200 cursor-pointer ${
+                className={`flex-1 py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
                   mode === "register"
                     ? "bg-card text-foreground shadow-sm font-bold"
                     : "text-muted-foreground hover:text-foreground"
@@ -401,30 +320,31 @@ export default function GirisPage() {
             </div>
           </div>
 
-          {/* Feedback Alerts */}
+          {/* Alert Notifications */}
           {errorMsg && (
-            <div className="mb-6 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs sm:text-sm flex items-start gap-3 animate-shake">
-              <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-              <div className="flex-1">{errorMsg}</div>
+            <div className="mb-4 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{errorMsg}</span>
             </div>
           )}
 
           {successMsg && (
-            <div className="mb-6 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs sm:text-sm flex items-start gap-3">
-              <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
-              <div className="flex-1">{successMsg}</div>
+            <div className="mb-4 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <span>{successMsg}</span>
             </div>
           )}
 
-          {/* Login Form */}
+          {/* ── Form Section ───────────────────────────────────────────── */}
           {mode === "login" ? (
-            <form onSubmit={handleLogin} className="space-y-4">
+            /* Login Form */
+            <form onSubmit={handleLogin} className="space-y-3.5">
               <div>
-                <label className="block text-xs font-semibold text-foreground mb-1.5">
-                  E-posta Adresi
+                <label className="block text-xs font-semibold text-foreground/80 mb-1">
+                  E-posta
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted-foreground">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-foreground">
                     <Mail className="w-4 h-4" />
                   </div>
                   <input
@@ -433,26 +353,26 @@ export default function GirisPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="adiniz@ornek.com"
-                    className="w-full pl-10 pr-4 py-3 bg-card border border-border rounded-xl text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    className="w-full pl-9 pr-3 py-2.5 bg-muted/40 border border-border rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#5CB338]/20 focus:border-[#5CB338] transition-all"
                   />
                 </div>
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-semibold text-foreground">
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-foreground/80">
                     Şifre
                   </label>
                   <button
                     type="button"
                     onClick={() => setShowForgotModal(true)}
-                    className="text-xs font-medium text-primary hover:underline cursor-pointer"
+                    className="text-[11px] font-medium text-[#5CB338] hover:underline cursor-pointer"
                   >
                     Şifremi Unuttum?
                   </button>
                 </div>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted-foreground">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-foreground">
                     <Lock className="w-4 h-4" />
                   </div>
                   <input
@@ -461,12 +381,12 @@ export default function GirisPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full pl-10 pr-10 py-3 bg-card border border-border rounded-xl text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    className="w-full pl-9 pr-9 py-2.5 bg-muted/40 border border-border rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#5CB338]/20 focus:border-[#5CB338] transition-all"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-muted-foreground hover:text-foreground cursor-pointer"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-foreground cursor-pointer"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -474,16 +394,16 @@ export default function GirisPage() {
               </div>
 
               {/* Remember Me */}
-              <div className="flex items-center justify-between pt-1">
-                <label className="flex items-center gap-2.5 cursor-pointer">
+              <div className="flex items-center justify-between pt-0.5">
+                <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={rememberMe}
                     onChange={(e) => setRememberMe(e.target.checked)}
-                    className="w-4 h-4 rounded border-border text-primary focus:ring-primary accent-[#5CB338] cursor-pointer"
+                    className="w-3.5 h-3.5 rounded border-border text-[#5CB338] focus:ring-[#5CB338] accent-[#5CB338] cursor-pointer"
                   />
-                  <span className="text-xs font-medium text-muted-foreground">
-                    Beni Hatırla
+                  <span className="text-xs text-muted-foreground">
+                    Beni hatırla
                   </span>
                 </label>
               </div>
@@ -492,7 +412,7 @@ export default function GirisPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3.5 px-4 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-sm shadow-md shadow-primary/20 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer hover:shadow-lg hover:shadow-primary/30 disabled:opacity-50 mt-2"
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-[#2E6F40] to-[#5CB338] hover:opacity-95 text-white font-semibold text-xs sm:text-sm shadow-md shadow-[#5CB338]/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 mt-1"
               >
                 {loading ? (
                   <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -506,13 +426,13 @@ export default function GirisPage() {
             </form>
           ) : (
             /* Register Form */
-            <form onSubmit={handleRegister} className="space-y-4">
+            <form onSubmit={handleRegister} className="space-y-3">
               <div>
-                <label className="block text-xs font-semibold text-foreground mb-1.5">
-                  Ad ve Soyad
+                <label className="block text-xs font-semibold text-foreground/80 mb-1">
+                  Ad Soyad
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted-foreground">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-foreground">
                     <User className="w-4 h-4" />
                   </div>
                   <input
@@ -521,17 +441,17 @@ export default function GirisPage() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Mehmet Usta"
-                    className="w-full pl-10 pr-4 py-3 bg-card border border-border rounded-xl text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    className="w-full pl-9 pr-3 py-2 bg-muted/40 border border-border rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#5CB338]/20 focus:border-[#5CB338] transition-all"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-foreground mb-1.5">
-                  E-posta Adresi
+                <label className="block text-xs font-semibold text-foreground/80 mb-1">
+                  E-posta
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted-foreground">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-foreground">
                     <Mail className="w-4 h-4" />
                   </div>
                   <input
@@ -540,85 +460,64 @@ export default function GirisPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="adiniz@ornek.com"
-                    className="w-full pl-10 pr-4 py-3 bg-card border border-border rounded-xl text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    className="w-full pl-9 pr-3 py-2 bg-muted/40 border border-border rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#5CB338]/20 focus:border-[#5CB338] transition-all"
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-foreground mb-1.5">
-                  Şifre (En az 6 karakter)
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted-foreground">
-                    <Lock className="w-4 h-4" />
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs font-semibold text-foreground/80 mb-1">
+                    Şifre
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••"
+                      className="w-full pl-3 pr-7 py-2 bg-muted/40 border border-border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#5CB338]/20 focus:border-[#5CB338]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 pr-2 flex items-center text-muted-foreground"
+                    >
+                      {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    </button>
                   </div>
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full pl-10 pr-10 py-3 bg-card border border-border rounded-xl text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-muted-foreground hover:text-foreground cursor-pointer"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-foreground mb-1.5">
-                  Şifre Tekrar
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted-foreground">
-                    <ShieldCheck className="w-4 h-4" />
+                <div>
+                  <label className="block text-xs font-semibold text-foreground/80 mb-1">
+                    Şifre Tekrar
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
+                      required
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="••••••"
+                      className="w-full pl-3 pr-7 py-2 bg-muted/40 border border-border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#5CB338]/20 focus:border-[#5CB338]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute inset-y-0 right-0 pr-2 flex items-center text-muted-foreground"
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    </button>
                   </div>
-                  <input
-                    type={showConfirmPassword ? "text" : "password"}
-                    required
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full pl-10 pr-10 py-3 bg-card border border-border rounded-xl text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-muted-foreground hover:text-foreground cursor-pointer"
-                  >
-                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
                 </div>
-              </div>
-
-              {/* Terms Checkbox */}
-              <div className="pt-1">
-                <label className="flex items-start gap-2.5 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    required
-                    checked={acceptTerms}
-                    onChange={(e) => setAcceptTerms(e.target.checked)}
-                    className="w-4 h-4 mt-0.5 rounded border-border text-primary focus:ring-primary accent-[#5CB338] cursor-pointer"
-                  />
-                  <span className="text-xs text-muted-foreground leading-snug">
-                    <span className="text-foreground font-medium">Kullanım Şartları</span> ve{" "}
-                    <span className="text-foreground font-medium">Gizlilik Politikası</span>'nı okudum, kabul ediyorum.
-                  </span>
-                </label>
               </div>
 
               {/* Submit Button */}
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3.5 px-4 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-sm shadow-md shadow-primary/20 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer hover:shadow-lg hover:shadow-primary/30 disabled:opacity-50 mt-2"
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-[#2E6F40] to-[#5CB338] hover:opacity-95 text-white font-semibold text-xs sm:text-sm shadow-md shadow-[#5CB338]/20 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 mt-1"
               >
                 {loading ? (
                   <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -633,41 +532,39 @@ export default function GirisPage() {
           )}
 
           {/* Divider */}
-          <div className="relative my-6">
+          <div className="relative my-4">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border" />
+              <div className="w-full border-t border-border/70" />
             </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-[#F8FAF8] px-3 text-muted-foreground font-medium">
-                veya
-              </span>
+            <div className="relative flex justify-center text-[11px] uppercase">
+              <span className="bg-card px-2.5 text-muted-foreground">veya</span>
             </div>
           </div>
 
-          {/* Guest Direct Entry Button */}
+          {/* Misafir Girişi */}
           <button
             type="button"
             onClick={handleGuestLogin}
-            className="w-full py-3 px-4 rounded-xl border border-border bg-card hover:bg-muted/60 text-foreground font-medium text-xs sm:text-sm transition-all duration-200 flex items-center justify-center gap-2.5 cursor-pointer group shadow-sm hover:border-primary/40"
+            className="w-full py-2.5 px-3 rounded-xl border border-border hover:bg-muted/50 text-foreground text-xs font-medium transition-all flex items-center justify-center gap-2 cursor-pointer group"
           >
-            <span className="text-lg">🥮</span>
-            <span>Kayıt Olmadan Hızlıca Göz At (Misafir Girişi)</span>
+            <span>🥮</span>
+            <span>Misafir Olarak Devam Et</span>
             <ArrowRight className="w-3.5 h-3.5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
           </button>
         </div>
 
-        {/* Security & Info Footer */}
-        <div className="text-center pt-4">
-          <p className="text-[11px] text-muted-foreground/70 flex items-center justify-center gap-1.5">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Verileriniz Supabase 256-bit SSL şifrelemesi ile korunmaktadır.</span>
+        {/* Footer Subtle Note */}
+        <div className="text-center mt-3">
+          <p className="text-[11px] text-white/70 drop-shadow-sm flex items-center justify-center gap-1.5">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-300" />
+            <span>256-bit SSL ve Supabase ile güvenli bağlantı</span>
           </p>
         </div>
       </div>
 
-      {/* ── Forgot Password Modal ────────────────────────────────────────── */}
+      {/* ── Forgot Password Modal ────────────────────────────────────── */}
       {showForgotModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="bg-card w-full max-w-sm rounded-3xl p-6 border border-border shadow-2xl relative">
             <button
               onClick={() => setShowForgotModal(false)}
@@ -676,37 +573,37 @@ export default function GirisPage() {
               <X className="w-4 h-4" />
             </button>
 
-            <div className="w-12 h-12 rounded-2xl bg-secondary text-primary flex items-center justify-center mx-auto mb-4">
+            <div className="w-11 h-11 rounded-2xl bg-secondary text-[#5CB338] flex items-center justify-center mx-auto mb-3">
               <HelpCircle className="w-6 h-6" />
             </div>
 
-            <h3 className="text-lg font-bold text-center text-foreground">
+            <h3 className="text-base font-bold text-center text-foreground">
               Şifreni mi Unuttun Rafık?
             </h3>
-            <p className="text-xs text-muted-foreground text-center mt-1.5 mb-5">
-              Kayıtlı e-posta adresini yaz, sana şifre sıfırlama bağlantısını hemen yollayalım.
+            <p className="text-xs text-muted-foreground text-center mt-1 mb-4">
+              Kayıtlı e-posta adresini yaz, şifre sıfırlama bağlantısını hemen yollayalım.
             </p>
 
             {forgotSent ? (
-              <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs text-center flex items-center justify-center gap-2">
+              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 text-xs text-center flex items-center justify-center gap-2">
                 <CheckCircle2 className="w-4 h-4" />
                 <span>Sıfırlama bağlantısı e-posta adresinize gönderildi!</span>
               </div>
             ) : (
-              <form onSubmit={handleForgotPassword} className="space-y-4">
+              <form onSubmit={handleForgotPassword} className="space-y-3">
                 <input
                   type="email"
                   required
                   value={forgotEmail}
                   onChange={(e) => setForgotEmail(e.target.value)}
                   placeholder="adiniz@ornek.com"
-                  className="w-full px-4 py-3 bg-muted/50 border border-border rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  className="w-full px-3.5 py-2.5 bg-muted/40 border border-border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#5CB338]/20 focus:border-[#5CB338]"
                 />
                 <button
                   type="submit"
-                  className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-xs sm:text-sm hover:bg-primary/90 transition-colors cursor-pointer"
+                  className="w-full py-2.5 rounded-xl bg-[#5CB338] text-white font-semibold text-xs hover:bg-[#5CB338]/90 transition-colors cursor-pointer"
                 >
-                  Sıfırlama Bağlantısı Gönder
+                  Bağlantı Gönder
                 </button>
               </form>
             )}
