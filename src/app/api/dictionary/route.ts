@@ -5,7 +5,7 @@ export const runtime = "nodejs";
 
 export async function GET() {
   try {
-    const words = getDictionaryWords();
+    const words = await getDictionaryWords();
     return NextResponse.json({ words });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Kelime ve anlamı zorunludur." }, { status: 400 });
     }
 
-    const created = addDictionaryWord({ word, meaning, example, author, category });
+    const created = await addDictionaryWord({ word, meaning, example, author, category });
     return NextResponse.json({ word: created });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -34,7 +34,7 @@ export async function PUT(req: NextRequest) {
     }
 
     const identifier = userIdentifier || req.headers.get("x-forwarded-for") || "default_user";
-    const result = voteDictionaryWord({ wordId, userIdentifier: identifier, type });
+    const result = await voteDictionaryWord({ wordId, userIdentifier: identifier, type });
     return NextResponse.json(result);
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

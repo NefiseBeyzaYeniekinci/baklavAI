@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
     // Fetch approved words from DB
     let dbApprovedWords: { word: string; meaning: string }[] = [];
     try {
-      dbApprovedWords = getApprovedWords();
+      dbApprovedWords = await getApprovedWords();
     } catch (e) {
       console.warn("DB approved words okunamadı:", e);
     }
