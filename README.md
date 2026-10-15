@@ -1,39 +1,69 @@
-# BaklavAI
+# 🥮 BaklavAI
 
-Gaziantep kültürünü, şivesini ve sıcaklığını dijital dünyaya taşıyan yöresel yapay zeka asistanı.
+> Gaziantep kültürünü, şivesini ve samimiyetini dijital dünyaya taşıyan yöresel yapay zeka asistanı.
 
-## Proje Hakkında
+🌐 **Canlı Demo (Live Website):** [https://baklav-ai.vercel.app/](https://baklav-ai.vercel.app/)
 
-BaklavAI, standart, ruhsuz yapay zeka arayüzlerinin aksine; tıpkı bir Antepli gibi konuşan, yöresel kelimeleri anlayan ve size "canım ciğerim" samimiyetiyle yaklaşan özel bir sohbet asistanıdır.
+---
 
-Projenin arayüzü, modern mesajlaşma uygulamaları (ChatGPT, Gemini, WhatsApp) standartlarında, ferah "Taze Fıstık Yeşili ve Şerbet" teması baz alınarak tasarlanmıştır.
+## 🌟 Proje Hakkında
 
-## Özellikler
+BaklavAI, standart ve ruhsuz yapay zeka arayüzlerinin aksine; tıpkı bir Antepli gibi konuşan, yöresel şiveyi ve kelimeleri anlayan ve size *"canım ciğerim, rafık"* samimiyetiyle yaklaşan özel bir sohbet asistanıdır.
 
-- **Yöresel Yapay Zeka Sohbeti:** Size Antep ağzıyla cevap veren ana sohbet alanı.
-- **Sözlüğe Ekle:** Bilinmeyen veya yapay zekanın öğrenmesini istediğiniz yöresel kelimeleri sisteme öğretebileceğiniz özel form.
-- **Günün Kelimesi ve Keşfet:** Gaziantep kültürüne ait popüler konuları (#Tarihi Çarşılar vs.) ve yöresel kelimeleri tek tıkla sohbete dönüştürebilme.
-- **Geçmiş Sohbetler:** Önceki konulara (örn: Küşleme nerede yenir?) hızlıca geri dönebilme.
-- **Modern ve Organik Arayüz:** Keskin köşelerin olmadığı, göz yormayan soft renkler, yumuşak gölgeler ve kapsül butonlarla bezenmiş premium tasarım.
+Projenin arayüzü, modern mesajlaşma uygulamaları standartlarında, ferah **"Taze Fıstık Yeşili ve Açık Şerbet"** teması baz alınarak tasarlanmıştır.
 
-## Kullanılan Teknolojiler
+---
 
-- **Framework:** Next.js 15 (App Router)
-- **Dil:** TypeScript
-- **Stil & Tasarım:** Tailwind CSS
+## 🚀 Canlı Sürüm
+
+Uygulamayı hemen tarayıcınızda denemek için tıklayın:  
+👉 **[baklav-ai.vercel.app](https://baklav-ai.vercel.app/)**
+
+---
+
+## ✨ Özellikler
+
+- **🥮 Antep Ağzıyla Akıllı Sohbet:** Gaziantep'in zengin mutfağı, tarihi mekanları ve kültürü hakkında Antep ağzıyla sohbet eden yapay zeka.
+- **🔐 Kolay ve Güvenli Giriş:** Google ile Tek Tıkla Giriş (OAuth), E-posta/Şifre ile Kayıt veya Kayıtsız Misafir Girişi.
+- **💬 Gerçek ve Kalıcı Sohbet Geçmişi:** Yapılan tüm konuşmalar oturum bazlı kaydedilir; geçmiş sohbetlere istediğiniz zaman geri dönebilir veya silebilirsiniz.
+- **📖 Antep Sözlüğü:** Kuşaktan kuşağa aktarılan yöresel kelimeler, deyimler ve atasözleri arşivi. Kullanıcılar yeni kelimeler ekleyebilir ve BaklavAI anında öğrenir.
+- **🎨 Modern ve Ferah Açık Tema:** Göz yormayan soft renkler, yumuşak gölgeler, oval kapsül butonlar ve responsive (mobil/tablet/masaüstü) uyumlu arayüz.
+
+---
+
+## 🛠️ Kullanılan Teknolojiler
+
+- **Framework:** [Next.js](https://nextjs.org/) (App Router & Turbopack)
+- **Dil:** [TypeScript](https://www.typescriptlang.org/)
+- **Yapay Zeka (LLM):** Google Gemini 3.8 Flash / 2.5 Flash API (`@google/genai`)
+- **Veritabanı & Auth:** [Supabase](https://supabase.com/) (PostgreSQL & Google OAuth)
+- **Stil & Tasarım:** [Tailwind CSS](https://tailwindcss.com/)
 - **Bileşen Kütüphanesi:** Shadcn UI & Base UI
 - **İkonlar:** Lucide React
+- **Dağıtım (Deployment):** [Vercel](https://vercel.com/)
 
-## Geliştirme
+---
+
+## 💻 Yerel Geliştirme (Local Development)
 
 Projeyi bilgisayarınızda çalıştırmak için:
 
 ```bash
-# Bağımlılıkları yükleyin
+# 1. Depoyu klonlayın
+git clone https://github.com/NefiseBeyzaYeniekinci/baklavAI.git
+
+# 2. Proje dizinine gidin
+cd baklavAI
+
+# 3. Bağımlılıkları yükleyin
 npm install
 
-# Geliştirme sunucusunu başlatın
+# 4. Geliştirme sunucusunu başlatın
 npm run dev
 ```
 
 Sunucu başladıktan sonra tarayıcınızdan `http://localhost:3000` adresine giderek arayüzü görüntüleyebilirsiniz.
+
+---
+
+© 2026 **BaklavAI** • Gaziantep'in İlk ve Tek Yöresel Yapay Zekası
