@@ -199,26 +199,22 @@ export default function GirisPage() {
 
   return (
     <div className="relative min-h-screen w-full flex items-center justify-center p-4 sm:p-6 overflow-hidden selection:bg-[#5CB338]/30 selection:text-white">
-      {/* ── Background: Yeşil Tonlarında Antep Kalesi ─────────────────────── */}
+      {/* ── Background: Yeşil Tonlarında Zeugma Çingene Kızı ───────────────── */}
       <div 
         className="fixed inset-0 bg-cover bg-center -z-20 scale-105"
-        style={{ backgroundImage: `url('/images/kesfet/gaziantep-kalesi.jpg')` }}
+        style={{ backgroundImage: `url('/images/kesfet/zeugma.jpg')` }}
       />
       {/* Proje teması yeşil katman (Green Toned Overlay & Vignette) */}
-      <div className="fixed inset-0 bg-gradient-to-b from-[#0A2012]/85 via-[#11381E]/80 to-[#07180D]/90 mix-blend-multiply -z-10" />
-      <div className="fixed inset-0 bg-[#2E6F40]/25 mix-blend-color -z-10" />
-      <div className="fixed inset-0 backdrop-blur-[5px] -z-10" />
+      <div className="fixed inset-0 bg-gradient-to-b from-[#081F10]/85 via-[#10381C]/80 to-[#06180C]/90 mix-blend-multiply -z-10" />
+      <div className="fixed inset-0 bg-[#2E6F40]/30 mix-blend-color -z-10" />
+      <div className="fixed inset-0 backdrop-blur-[6px] -z-10" />
 
       {/* ── Center Semi-Transparent Frosted Glass Card ──────────────────────── */}
       <div className="w-full max-w-[420px] z-10 animate-in fade-in zoom-in-95 duration-200">
-        <div className="rounded-[28px] bg-black/45 backdrop-blur-2xl border border-white/20 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.6)] p-6 sm:p-8 text-white">
+        <div className="rounded-[28px] bg-black/40 backdrop-blur-2xl border border-white/10 ring-1 ring-white/5 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.65)] p-6 sm:p-8 text-white">
           
           {/* Card Header: Direkt Hoş Geldin Rafık */}
-          <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#2E6F40] to-[#5CB338] text-2xl shadow-lg shadow-[#5CB338]/30 mb-3">
-              🥮
-            </div>
-
+          <div className="text-center mb-6 pt-1">
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
               {mode === "login" ? "Hoş Geldin Rafık" : "Kayıt Ol"}
             </h1>
