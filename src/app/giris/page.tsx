@@ -269,17 +269,12 @@ export default function GirisPage() {
           <div className="inline-flex items-center justify-center gap-2 mb-2">
             <span className="text-3xl filter drop-shadow-sm">🥮</span>
             <span className="text-3xl font-extrabold tracking-tight text-slate-900">
-              baklav<span className="text-[#5CB338]">AI</span>
+              Baklav<span className="text-[#5CB338]">AI</span>
             </span>
           </div>
           <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-800">
             {mode === "login" ? "Hoş Geldin Rafık!" : "Aramıza Katıl Rafık!"}
           </h2>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1.5 font-normal">
-            {mode === "login"
-              ? "Tekrar hoş geldin! Hesabına giriş yap."
-              : "Aramıza katıl! Ücretsiz hesabını hemen oluştur."}
-          </p>
         </div>
 
         {/* Segmented Pill Switcher (Giriş Yap | Kayıt Ol) */}
