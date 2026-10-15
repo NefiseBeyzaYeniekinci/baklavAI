@@ -266,8 +266,7 @@ export default function GirisPage() {
         
         {/* Title: BaklavAI & Hoş Geldin Rafık */}
         <div className="text-center mb-7">
-          <div className="inline-flex items-center justify-center gap-2 mb-2">
-            <span className="text-3xl filter drop-shadow-sm">🥮</span>
+          <div className="inline-flex items-center justify-center mb-2">
             <span className="text-3xl font-extrabold tracking-tight text-slate-900">
               Baklav<span className="text-[#5CB338]">AI</span>
             </span>

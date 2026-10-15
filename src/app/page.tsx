@@ -152,7 +152,7 @@ export default function Home() {
         <div className="flex flex-col items-center gap-3 animate-in fade-in duration-200">
           <div className="text-4xl animate-bounce">🥮</div>
           <div className="font-semibold text-slate-700 text-sm tracking-wide">
-            baklav<span className="text-[#5CB338]">AI</span> açılıyor...
+            Baklav<span className="text-[#5CB338]">AI</span> açılıyor...
           </div>
         </div>
       </div>
@@ -167,7 +167,7 @@ export default function Home() {
         <div className="pt-10 pb-6 px-10 flex items-center gap-3">
           <div className="text-4xl filter drop-shadow-sm transition-transform hover:scale-105 cursor-default">🥮</div>
           <h1 className="font-medium text-[22px] tracking-tight text-primary/90">
-            baklav<span className="text-primary font-bold">AI</span>
+            Baklav<span className="text-primary font-bold">AI</span>
           </h1>
         </div>
 
@@ -277,7 +277,7 @@ export default function Home() {
             <div className="flex items-center gap-1.5">
               <span className="text-2xl">🥮</span>
               <h1 className="font-semibold text-base tracking-tight text-foreground">
-                baklav<span className="text-primary font-bold">AI</span>
+                Baklav<span className="text-primary font-bold">AI</span>
               </h1>
             </div>
           </div>
@@ -316,7 +316,7 @@ export default function Home() {
                   <span className="text-3xl">🥮</span>
                   <div>
                     <h2 className="font-bold text-lg leading-tight text-foreground">
-                      baklav<span className="text-primary">AI</span>
+                      Baklav<span className="text-primary">AI</span>
                     </h2>
                     <p className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider">
                       Gaziantep Asistanı

@@ -477,7 +477,7 @@ export default function SozlukPage() {
             <span className="text-3xl filter drop-shadow-xs group-hover:scale-105 transition-transform">🥮</span>
             <div className="flex items-center gap-2">
               <h1 className="font-bold text-xl tracking-tight text-foreground">
-                baklav<span className="text-primary font-extrabold">AI</span>
+                Baklav<span className="text-primary font-extrabold">AI</span>
               </h1>
             </div>
           </Link>
