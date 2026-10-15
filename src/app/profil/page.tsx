@@ -210,7 +210,7 @@ export default function ProfilPage() {
               <div className="w-20 h-20 rounded-full bg-muted border-2 border-border overflow-hidden flex items-center justify-center">
                 {avatarPreview ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={avatarPreview} alt="Profil" className="w-full h-full object-cover" />
+                  <img src={avatarPreview} alt="Profil" referrerPolicy="no-referrer" crossOrigin="anonymous" className="w-full h-full object-cover" />
                 ) : (
                   <User className="w-8 h-8 text-muted-foreground/50" />
                 )}

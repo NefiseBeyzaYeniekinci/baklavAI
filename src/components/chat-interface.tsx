@@ -17,15 +17,82 @@ export function ChatInterface() {
   const [isLoading, setIsLoading] = useState(false)
   const [showScrollBottom, setShowScrollBottom] = useState(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null)
+  const sessionIdRef = useRef<string | null>(null)
   const [reactions, setReactions] = useState<Record<string, "like" | "dislike">>({})
 
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const isAutoScrollEnabled = useRef(true)
 
+  // Keep sessionIdRef in sync
+  useEffect(() => {
+    sessionIdRef.current = currentSessionId
+  }, [currentSessionId])
+
+  // Helper to persist current session to localStorage
+  const persistSession = useCallback((sId: string, msgs: Message[]) => {
+    if (!msgs || msgs.length === 0) return
+    try {
+      const stored = localStorage.getItem("baklavai_chat_sessions")
+      let sessions: any[] = stored ? JSON.parse(stored) : []
+      if (!Array.isArray(sessions)) sessions = []
+
+      const firstUserMsg = msgs.find((m) => m.role === "user")?.content || "Sohbet"
+      const title = firstUserMsg.length > 40 ? firstUserMsg.slice(0, 40) + "..." : firstUserMsg
+      const nowStr = new Date().toISOString()
+
+      const existingIndex = sessions.findIndex((s: any) => s.id === sId)
+      if (existingIndex >= 0) {
+        sessions[existingIndex] = {
+          ...sessions[existingIndex],
+          messages: msgs,
+          updatedAt: nowStr,
+        }
+      } else {
+        sessions.unshift({
+          id: sId,
+          title,
+          createdAt: nowStr,
+          updatedAt: nowStr,
+          messages: msgs,
+        })
+      }
+
+      localStorage.setItem("baklavai_chat_sessions", JSON.stringify(sessions))
+      localStorage.setItem("baklavai_active_session_id", sId)
+      window.dispatchEvent(new Event("chats-updated"))
+    } catch (e) {
+      console.warn("Sohbet kaydedilemedi:", e)
+    }
+  }, [])
+
+  // Load active session on mount
+  useEffect(() => {
+    try {
+      const activeId = localStorage.getItem("baklavai_active_session_id")
+      const stored = localStorage.getItem("baklavai_chat_sessions")
+      if (stored) {
+        const sessions = JSON.parse(stored)
+        if (Array.isArray(sessions) && sessions.length > 0) {
+          const current = activeId ? sessions.find((s: any) => s.id === activeId) || sessions[0] : sessions[0]
+          if (current && current.messages?.length > 0) {
+            setCurrentSessionId(current.id)
+            sessionIdRef.current = current.id
+            setMessages(current.messages)
+            localStorage.setItem("baklavai_active_session_id", current.id)
+          }
+        }
+      }
+    } catch {}
+  }, [])
+
   // Listen for reset chat event from sidebar "Yeni Sohbet" button
   useEffect(() => {
     const handleResetChat = () => {
+      setCurrentSessionId(null)
+      sessionIdRef.current = null
+      localStorage.removeItem("baklavai_active_session_id")
       setMessages([])
       setInput("")
       setIsLoading(false)
@@ -34,6 +101,30 @@ export function ChatInterface() {
 
     window.addEventListener('reset-chat', handleResetChat)
     return () => window.removeEventListener('reset-chat', handleResetChat)
+  }, [])
+
+  // Listen for load-chat-session event from sidebar history dialog
+  useEffect(() => {
+    const handleLoadSession = (e: CustomEvent) => {
+      const session = e.detail
+      if (session && session.id && session.messages) {
+        setCurrentSessionId(session.id)
+        sessionIdRef.current = session.id
+        setMessages(session.messages)
+        localStorage.setItem("baklavai_active_session_id", session.id)
+        setTimeout(() => {
+          if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTo({
+              top: scrollContainerRef.current.scrollHeight,
+              behavior: "smooth"
+            })
+          }
+        }, 80)
+      }
+    }
+
+    window.addEventListener('load-chat-session', handleLoadSession as EventListener)
+    return () => window.removeEventListener('load-chat-session', handleLoadSession as EventListener)
   }, [])
 
   // Check scroll position to show/hide scroll-to-bottom button and control auto-scroll
@@ -79,11 +170,23 @@ export function ChatInterface() {
       time: timeString
     }
 
+    // Ensure active session ID
+    let sId = sessionIdRef.current
+    if (!sId) {
+      sId = Date.now().toString()
+      setCurrentSessionId(sId)
+      sessionIdRef.current = sId
+      localStorage.setItem("baklavai_active_session_id", sId)
+    }
+
     const currentBase = customHistory || messages
     const updatedMessages = [...currentBase, userMessage]
     setMessages(updatedMessages)
     setIsLoading(true)
     isAutoScrollEnabled.current = true
+
+    // Persist immediately with user message
+    persistSession(sId, updatedMessages)
 
     // Force scroll down when sending user message
     setTimeout(() => scrollToBottom(true), 50)
@@ -162,6 +265,18 @@ export function ChatInterface() {
           scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight
         }
       }
+
+      // Persist completed conversation with assistant message
+      const completedMessages = [
+        ...updatedMessages,
+        {
+          id: assistantMsgId,
+          role: "assistant" as const,
+          content: accumulatedText,
+          time: timeString
+        }
+      ]
+      persistSession(sId, completedMessages)
     } catch (error: any) {
       console.error("Mesaj gönderilirken hata oluştu:", error)
       const errorContent = `Aboov rafık, bir aksilik oldu zağar! 😔\n\n_${error.message || "Bir hata oluştu, lütfen tekrar deneyin."}_`
@@ -173,6 +288,17 @@ export function ChatInterface() {
             : msg
         )
       )
+
+      const errorMessages = [
+        ...updatedMessages,
+        {
+          id: assistantMsgId,
+          role: "assistant" as const,
+          content: errorContent,
+          time: timeString
+        }
+      ]
+      persistSession(sId, errorMessages)
     } finally {
       setIsLoading(false)
     }
@@ -302,9 +428,9 @@ export function ChatInterface() {
       {messages.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center px-4 w-full max-w-[760px] mx-auto text-center animate-in fade-in duration-400">
           
-          {/* Headline matching Gemini's minimalist style: Nerden başliyak rafık? */}
+          {/* Headline matching user request */}
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-normal tracking-tight text-foreground/90 mb-6 sm:mb-8">
-            Nerden başliyak <span className="text-primary font-medium">rafık?</span>
+            <span className="text-primary font-bold">Rafık</span> nerden başlıyak bugün?
           </h1>
 
           {/* Centered Input Pill */}

@@ -38,6 +38,7 @@ export default function Home() {
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [avatarError, setAvatarError] = useState(false);
   const [userProfile, setUserProfile] = useState<{
     name: string;
     email: string;
@@ -55,6 +56,11 @@ export default function Home() {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
           const u = session.user;
+          const avatar =
+            u.user_metadata?.avatar_url ||
+            u.user_metadata?.picture ||
+            u.user_metadata?.avatar ||
+            null;
           const profile = {
             name:
               u.user_metadata?.full_name ||
@@ -62,7 +68,7 @@ export default function Home() {
               u.email?.split("@")[0] ||
               "BaklavAI Kullanıcısı",
             email: u.email || "",
-            avatarDataUrl: u.user_metadata?.avatar_url || null,
+            avatarDataUrl: avatar,
           };
           localStorage.setItem("baklavai_profile", JSON.stringify(profile));
           setUserProfile(profile);
@@ -96,6 +102,11 @@ export default function Home() {
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
         const u = session.user;
+        const avatar =
+          u.user_metadata?.avatar_url ||
+          u.user_metadata?.picture ||
+          u.user_metadata?.avatar ||
+          null;
         const profile = {
           name:
             u.user_metadata?.full_name ||
@@ -103,7 +114,7 @@ export default function Home() {
             u.email?.split("@")[0] ||
             "BaklavAI Kullanıcısı",
           email: u.email || "",
-          avatarDataUrl: u.user_metadata?.avatar_url || null,
+          avatarDataUrl: avatar,
         };
         localStorage.setItem("baklavai_profile", JSON.stringify(profile));
         setUserProfile(profile);
@@ -215,9 +226,16 @@ export default function Home() {
           <DropdownMenu>
             <DropdownMenuTrigger className="w-full flex items-center justify-between px-4 py-3 bg-transparent hover:bg-muted/50 outline-none rounded-2xl transition-colors cursor-pointer">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-secondary text-primary font-bold flex items-center justify-center text-sm border border-primary/20 overflow-hidden">
-                  {userProfile.avatarDataUrl ? (
-                    <img src={userProfile.avatarDataUrl} alt={userProfile.name} className="w-full h-full object-cover" />
+                <div className="w-9 h-9 rounded-full bg-secondary text-primary font-bold flex items-center justify-center text-sm border border-primary/20 overflow-hidden shrink-0">
+                  {userProfile.avatarDataUrl && !avatarError ? (
+                    <img 
+                      src={userProfile.avatarDataUrl} 
+                      alt={userProfile.name} 
+                      referrerPolicy="no-referrer"
+                      crossOrigin="anonymous"
+                      onError={() => setAvatarError(true)}
+                      className="w-full h-full object-cover" 
+                    />
                   ) : (
                     userProfile.name.charAt(0).toUpperCase()
                   )}
@@ -369,9 +387,16 @@ export default function Home() {
               <div className="p-4 border-t border-border/40 bg-muted/20">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-full bg-secondary text-primary font-bold flex items-center justify-center text-sm border border-primary/20 overflow-hidden">
-                      {userProfile.avatarDataUrl ? (
-                        <img src={userProfile.avatarDataUrl} alt={userProfile.name} className="w-full h-full object-cover" />
+                    <div className="w-9 h-9 rounded-full bg-secondary text-primary font-bold flex items-center justify-center text-sm border border-primary/20 overflow-hidden shrink-0">
+                      {userProfile.avatarDataUrl && !avatarError ? (
+                        <img 
+                          src={userProfile.avatarDataUrl} 
+                          alt={userProfile.name} 
+                          referrerPolicy="no-referrer"
+                          crossOrigin="anonymous"
+                          onError={() => setAvatarError(true)}
+                          className="w-full h-full object-cover" 
+                        />
                       ) : (
                         userProfile.name.charAt(0).toUpperCase()
                       )}
