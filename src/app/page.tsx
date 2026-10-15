@@ -22,6 +22,8 @@ import {
 } from "lucide-react";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/db";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,14 +35,85 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export default function Home() {
+  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [userProfile, setUserProfile] = useState({
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [userProfile, setUserProfile] = useState<{
+    name: string;
+    email: string;
+    avatarDataUrl: string | null;
+  }>({
     name: "BaklavAI Kullanıcısı",
     email: "kullanici@ornek.com",
-    avatarDataUrl: null as string | null,
+    avatarDataUrl: null,
   });
 
   useEffect(() => {
+    const checkAuth = async () => {
+      // 1. Check Supabase session (captures OAuth callback if redirected from Google)
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const u = session.user;
+          const profile = {
+            name:
+              u.user_metadata?.full_name ||
+              u.user_metadata?.name ||
+              u.email?.split("@")[0] ||
+              "BaklavAI Kullanıcısı",
+            email: u.email || "",
+            avatarDataUrl: u.user_metadata?.avatar_url || null,
+          };
+          localStorage.setItem("baklavai_profile", JSON.stringify(profile));
+          setUserProfile(profile);
+          setIsCheckingAuth(false);
+          return;
+        }
+      } catch (e) {
+        console.warn("Session check notice:", e);
+      }
+
+      // 2. Check localStorage profile
+      try {
+        const saved = localStorage.getItem("baklavai_profile");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && (parsed.name || parsed.email)) {
+            setUserProfile(parsed);
+            setIsCheckingAuth(false);
+            return;
+          }
+        }
+      } catch {}
+
+      // 3. Not authenticated -> redirect to /giris
+      router.replace("/giris");
+    };
+
+    checkAuth();
+
+    // Listen for auth state change from Supabase
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        const u = session.user;
+        const profile = {
+          name:
+            u.user_metadata?.full_name ||
+            u.user_metadata?.name ||
+            u.email?.split("@")[0] ||
+            "BaklavAI Kullanıcısı",
+          email: u.email || "",
+          avatarDataUrl: u.user_metadata?.avatar_url || null,
+        };
+        localStorage.setItem("baklavai_profile", JSON.stringify(profile));
+        setUserProfile(profile);
+        setIsCheckingAuth(false);
+      } else if (event === "SIGNED_OUT") {
+        localStorage.removeItem("baklavai_profile");
+        router.replace("/giris");
+      }
+    });
+
     const loadProfile = () => {
       try {
         const saved = localStorage.getItem("baklavai_profile");
@@ -52,14 +125,39 @@ export default function Home() {
         }
       } catch {}
     };
-    loadProfile();
+
     window.addEventListener("profile-updated", loadProfile);
-    return () => window.removeEventListener("profile-updated", loadProfile);
-  }, []);
+    return () => {
+      authListener.subscription.unsubscribe();
+      window.removeEventListener("profile-updated", loadProfile);
+    };
+  }, [router]);
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch {}
+    localStorage.removeItem("baklavai_profile");
+    window.dispatchEvent(new Event("profile-updated"));
+    router.replace("/giris");
+  };
 
   const handleNewChat = () => {
     window.dispatchEvent(new Event("reset-chat"));
   };
+
+  if (isCheckingAuth) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-[#F8FAF8]">
+        <div className="flex flex-col items-center gap-3 animate-in fade-in duration-200">
+          <div className="text-4xl animate-bounce">🥮</div>
+          <div className="font-semibold text-slate-700 text-sm tracking-wide">
+            baklav<span className="text-[#5CB338]">AI</span> açılıyor...
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background text-foreground p-0 md:p-3 md:pl-0 gap-2">
@@ -154,12 +252,11 @@ export default function Home() {
                 </Link>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
-              <Link href="/giris" onClick={() => {
-                localStorage.removeItem("baklavai_profile");
-                window.dispatchEvent(new Event("profile-updated"));
-              }}>
-                <DropdownMenuItem className="cursor-pointer rounded-xl text-red-600 focus:text-red-600 focus:bg-red-50">Çıkış Yap</DropdownMenuItem>
-              </Link>
+              <div onClick={handleLogout} className="cursor-pointer">
+                <DropdownMenuItem className="cursor-pointer rounded-xl text-red-600 focus:text-red-600 focus:bg-red-50">
+                  Çıkış Yap
+                </DropdownMenuItem>
+              </div>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -298,17 +395,15 @@ export default function Home() {
                   >
                     Giriş / Hesap
                   </Link>
-                  <Link
-                    href="/giris"
+                  <button
                     onClick={() => {
-                      localStorage.removeItem("baklavai_profile");
-                      window.dispatchEvent(new Event("profile-updated"));
                       setMobileMenuOpen(false);
+                      handleLogout();
                     }}
-                    className="py-2 text-center text-xs font-medium border border-border text-red-600 rounded-xl hover:bg-red-50 transition-colors"
+                    className="py-2 text-center text-xs font-medium border border-border text-red-600 rounded-xl hover:bg-red-50 transition-colors cursor-pointer"
                   >
                     Çıkış Yap
-                  </Link>
+                  </button>
                 </div>
               </div>
             </div>

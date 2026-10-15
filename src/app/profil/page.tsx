@@ -17,6 +17,7 @@ import {
   X,
   ShieldAlert,
 } from "lucide-react"
+import { supabase } from "@/lib/db"
 
 /* ─── Types ─────────────────────────────────────────────── */
 type Profile = {
@@ -129,16 +130,22 @@ export default function ProfilPage() {
   }
 
   /* ── Logout ── */
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch {}
     localStorage.removeItem(STORAGE_KEY)
-    window.location.href = "/"
+    window.location.href = "/giris"
   }
 
   /* ── Delete Account ── */
-  const handleDeleteAccount = () => {
+  const handleDeleteAccount = async () => {
     if (deleteInput !== "HESABIMI SİL") { toast("Onay metnini doğru yazın.", true); return }
+    try {
+      await supabase.auth.signOut();
+    } catch {}
     localStorage.clear()
-    window.location.href = "/"
+    window.location.href = "/giris"
   }
 
   /* ── Password Strength ── */
