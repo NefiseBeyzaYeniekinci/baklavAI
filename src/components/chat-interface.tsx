@@ -1,9 +1,8 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
-import { Send, Paperclip, CheckCheck } from "lucide-react"
-
-import { ScrollArea } from "@/components/ui/scroll-area"
+import { useState, useRef, useEffect, useCallback } from "react"
+import { Send, Paperclip, CheckCheck, Loader2, ArrowDown, ThumbsUp, ThumbsDown, RotateCw, Copy, Check } from "lucide-react"
+import ReactMarkdown from "react-markdown"
 
 type Message = {
   id: string
@@ -12,160 +11,456 @@ type Message = {
   time: string
 }
 
-const INITIAL_MESSAGES: Message[] = [
-  {
-    id: "1",
-    role: "assistant",
-    content: "Baklava is more than a dessert in Turkish culture—it's a symbol of hospitality, celebration, and heritage. Passed down through generations, it reflects the richness of Ottoman culinary tradition and the art of patience, precision, and care. Every layer tells a story, and every bite connects us to centuries of culture.",
-    time: "10:42 AM",
-  },
-]
-
 export function ChatInterface() {
-  const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES)
+  const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [showScrollBottom, setShowScrollBottom] = useState(false)
+  const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [reactions, setReactions] = useState<Record<string, "like" | "dislike">>({})
+
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const isAutoScrollEnabled = useRef(true)
 
-  // Auto-scroll to bottom
+  // Listen for reset chat event from sidebar "Yeni Sohbet" button
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages])
+    const handleResetChat = () => {
+      setMessages([])
+      setInput("")
+      setIsLoading(false)
+      setReactions({})
+    }
 
-  // Listen for custom events from other components (like sidebar)
+    window.addEventListener('reset-chat', handleResetChat)
+    return () => window.removeEventListener('reset-chat', handleResetChat)
+  }, [])
+
+  // Check scroll position to show/hide scroll-to-bottom button and control auto-scroll
+  const handleScroll = () => {
+    if (!scrollContainerRef.current) return
+    const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current
+    const distanceFromBottom = scrollHeight - scrollTop - clientHeight
+
+    const nearBottom = distanceFromBottom < 120
+    isAutoScrollEnabled.current = nearBottom
+    setShowScrollBottom(!nearBottom)
+  }
+
+  // Scroll to bottom helper
+  const scrollToBottom = useCallback((force = false) => {
+    if (!scrollContainerRef.current) return
+    if (force || isAutoScrollEnabled.current) {
+      scrollContainerRef.current.scrollTo({
+        top: scrollContainerRef.current.scrollHeight,
+        behavior: force ? "smooth" : "auto"
+      })
+    }
+  }, [])
+
+  // Auto scroll on new messages
   useEffect(() => {
-    const handleSendCustomMessage = (e: CustomEvent) => {
-      const text = e.detail;
-      if (!text) return;
-      
-      const now = new Date();
-      const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (messages.length > 0) {
+      scrollToBottom()
+    }
+  }, [messages, scrollToBottom])
 
-      const newUserMsg: Message = { 
-        id: Date.now().toString(), 
-        role: "user", 
-        content: text,
-        time: timeString
-      };
-      
-      setMessages((prev) => [...prev, newUserMsg]);
-
-      // Fake AI Response
-      setTimeout(() => {
-        const aiTime = new Date();
-        const aiTimeString = aiTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const fakeAiMsg: Message = {
-          id: (Date.now() + 1).toString(),
-          role: "assistant",
-          content: `"${text}" hakkında sana hemen Antep usulü bilgi veriyim canım ciğerim...`,
-          time: aiTimeString
-        };
-        setMessages((prev) => [...prev, fakeAiMsg]);
-      }, 1000);
-    };
-
-    window.addEventListener('send-chat-message', handleSendCustomMessage as EventListener);
-    return () => window.removeEventListener('send-chat-message', handleSendCustomMessage as EventListener);
-  }, []);
-
-  const handleSend = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!input.trim()) return
+  // Core function to send message to /api/chat with streaming
+  const sendMessageToApi = async (userText: string, customHistory?: Message[]) => {
+    if (!userText.trim() || isLoading) return
 
     const now = new Date()
     const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
-    const newUserMsg: Message = { 
-      id: Date.now().toString(), 
-      role: "user", 
-      content: input,
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content: userText,
       time: timeString
     }
-    
-    setMessages((prev) => [...prev, newUserMsg])
-    setInput("")
 
-    // Fake AI Response for UI demonstration
-    setTimeout(() => {
-      const aiTime = new Date()
-      const aiTimeString = aiTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      const fakeAiMsg: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: "Vay babayın kemiğine! Bunu dediğin eyi oldu. Şimdi sana Antep usulü efsane bir cevap hazırlıyım bekle zağar...",
-        time: aiTimeString
+    const currentBase = customHistory || messages
+    const updatedMessages = [...currentBase, userMessage]
+    setMessages(updatedMessages)
+    setIsLoading(true)
+    isAutoScrollEnabled.current = true
+
+    // Force scroll down when sending user message
+    setTimeout(() => scrollToBottom(true), 50)
+
+    // Prepare assistant placeholder message
+    const assistantMsgId = (Date.now() + 1).toString()
+    const assistantMessage: Message = {
+      id: assistantMsgId,
+      role: "assistant",
+      content: "",
+      time: timeString
+    }
+
+    // Add empty assistant message that will be populated via stream
+    setMessages((prev) => [...prev, assistantMessage])
+
+    try {
+      // Get custom words from localStorage
+      let customWords = []
+      try {
+        const stored = localStorage.getItem("baklavai_custom_words")
+        if (stored) {
+          customWords = JSON.parse(stored)
+        }
+      } catch (e) {
+        console.error("Local storage okunamadı:", e)
       }
-      setMessages((prev) => [...prev, fakeAiMsg])
-    }, 1000)
+
+      // Convert messages to API format
+      const apiMessages = updatedMessages.map(m => ({
+        role: m.role,
+        content: m.content
+      }))
+
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          messages: apiMessages,
+          customWords
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null)
+        throw new Error(errorData?.error || "Sunucudan yanıt alınamadı.")
+      }
+
+      const reader = response.body?.getReader()
+      if (!reader) {
+        throw new Error("Yanıt akışı başlatılamadı.")
+      }
+
+      const decoder = new TextDecoder()
+      let accumulatedText = ""
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        const chunk = decoder.decode(value, { stream: true })
+        accumulatedText += chunk
+
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === assistantMsgId
+              ? { ...msg, content: accumulatedText }
+              : msg
+          )
+        )
+
+        // Keep scrolling to bottom while streaming if user hasn't scrolled up
+        if (isAutoScrollEnabled.current && scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight
+        }
+      }
+    } catch (error: any) {
+      console.error("Mesaj gönderilirken hata oluştu:", error)
+      const errorContent = `Aboov rafık, bir aksilik oldu zağar! 😔\n\n_${error.message || "Bir hata oluştu, lütfen tekrar deneyin."}_`
+
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === assistantMsgId
+            ? { ...msg, content: errorContent }
+            : msg
+        )
+      )
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  return (
-    <div className="flex flex-col h-full relative bg-transparent">
-      
-      {/* Chat Messages Area */}
-      <ScrollArea className="flex-1 w-full z-10 px-4 md:px-12">
-        <div className="flex flex-col py-10 gap-6 pb-32 max-w-[850px] mx-auto">
-          
-          {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`flex w-full ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-            >
-              {/* Message Bubble */}
-              <div 
-                className={`relative max-w-[85%] md:max-w-[75%] px-6 py-4 rounded-[1.75rem] shadow-[0_2px_15px_rgba(0,0,0,0.03)] leading-[1.6]
-                  ${msg.role === "user" 
-                    ? "bg-white text-[#1F2937] rounded-tr-sm" 
-                    : "bg-[#F3F8F2] text-[#1F2937] rounded-tl-sm"
-                  }`}
-              >
-                <p className="text-[15.5px] text-[#2D3748]">{msg.content}</p>
-                
-                {/* Timestamp and Checkmarks */}
-                <div className={`flex items-center gap-1.5 mt-2.5 text-[11px] text-[#718096] ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                  <span>{msg.time}</span>
-                  {msg.role === "user" && <CheckCheck className="w-4 h-4 text-[#5CB338]" />}
-                </div>
-              </div>
-            </div>
-          ))}
-          <div ref={messagesEndRef} />
-        </div>
-      </ScrollArea>
+  // Handle regenerating an answer
+  const handleRegenerate = (assistantId: string) => {
+    if (isLoading) return
+    const index = messages.findIndex(m => m.id === assistantId)
+    if (index <= 0) return
 
-      {/* Floating Input Area (Pill Shaped) */}
-      <div className="absolute bottom-8 w-full px-4 z-20 flex justify-center">
-        <div className="w-full max-w-[850px]">
-          <form 
-            onSubmit={handleSend} 
-            className="flex items-center gap-3 bg-white rounded-full p-2 pr-2.5 shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all focus-within:shadow-[0_8px_30px_rgba(92,179,56,0.15)]"
-          >
-            {/* Attachment Button */}
-            <button 
-              type="button" 
-              className="p-3 text-[#A0AEC0] hover:text-[#4A5568] hover:bg-gray-50 rounded-full transition-colors ml-1"
-            >
-              <Paperclip className="w-[22px] h-[22px]" />
-            </button>
-            
-            {/* Input Field */}
-            <input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Message baklavAI..."
-              className="flex-1 bg-transparent border-0 outline-none text-[15.5px] placeholder:text-[#A0AEC0]"
-            />
-            
-            {/* Send Button */}
-            <button 
-              type="submit" 
-              disabled={!input.trim()}
-              className="flex items-center justify-center w-[46px] h-[46px] rounded-full bg-[#5CB338] hover:bg-[#4E9B2F] text-white shadow-sm transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
-            >
-              <Send className="w-5 h-5 ml-0.5" />
-            </button>
-          </form>
+    // Find the preceding user message
+    let lastUserMessage: Message | null = null
+    for (let i = index - 1; i >= 0; i--) {
+      if (messages[i].role === "user") {
+        lastUserMessage = messages[i]
+        break
+      }
+    }
+
+    if (!lastUserMessage) return
+
+    // Slice messages up to before this assistant message and user message
+    const previousHistory = messages.slice(0, index - 1)
+    sendMessageToApi(lastUserMessage.content, previousHistory)
+  }
+
+  // Handle copying message content to clipboard
+  const handleCopy = (id: string, text: string) => {
+    navigator.clipboard.writeText(text)
+    setCopiedId(id)
+    setTimeout(() => {
+      setCopiedId((curr) => (curr === id ? null : curr))
+    }, 2000)
+  }
+
+  // Handle like/dislike reactions
+  const handleReaction = (id: string, type: "like" | "dislike") => {
+    setReactions(prev => ({
+      ...prev,
+      [id]: prev[id] === type ? undefined as any : type
+    }))
+  }
+
+  // Listen for custom events from other components (sidebar, add-word dialog, etc.)
+  useEffect(() => {
+    const handleSendCustomMessage = (e: CustomEvent) => {
+      const text = e.detail
+      if (!text) return
+      sendMessageToApi(text)
+    }
+
+    window.addEventListener('send-chat-message', handleSendCustomMessage as EventListener)
+    return () => window.removeEventListener('send-chat-message', handleSendCustomMessage as EventListener)
+  }, [messages, isLoading])
+
+  // Check URL query parameter on load (e.g. redirected from /kesfet with ?q=...)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search)
+      const q = params.get("q")
+      if (q) {
+        window.history.replaceState({}, "", window.location.pathname)
+        setTimeout(() => {
+          sendMessageToApi(q)
+        }, 150)
+      }
+    }
+  }, [])
+
+  const handleSend = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!input.trim() || isLoading) return
+    const text = input
+    setInput("")
+    sendMessageToApi(text)
+  }
+
+  // Reusable input form
+  const renderInputForm = (isCentered = false) => (
+    <form 
+      onSubmit={handleSend} 
+      className={`flex items-center gap-3 bg-white rounded-full transition-all border border-border/60 focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/10 ${
+        isCentered 
+          ? "p-2.5 pr-3 shadow-[0_6px_30px_rgba(0,0,0,0.06)]" 
+          : "p-2 pr-2.5 shadow-[0_8px_30px_rgba(0,0,0,0.06)]"
+      }`}
+    >
+      {/* Attachment Button */}
+      <button 
+        type="button" 
+        className="p-2.5 text-[#A0AEC0] hover:text-[#4A5568] hover:bg-gray-100/70 rounded-full transition-colors ml-1 cursor-pointer shrink-0"
+        title="Ek ekle (Yakında)"
+      >
+        <Paperclip className="w-5 h-5" />
+      </button>
+      
+      {/* Input Field */}
+      <input
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        placeholder={isLoading ? "BaklavAI cevap veriyor..." : "BaklavAI'ye bir şeyler sor rafık..."}
+        disabled={isLoading}
+        autoFocus={isCentered}
+        className="flex-1 bg-transparent border-0 outline-none text-[15.5px] text-foreground placeholder:text-[#A0AEC0] disabled:opacity-60"
+      />
+      
+      {/* Send Button */}
+      <button 
+        type="submit" 
+        disabled={!input.trim() || isLoading}
+        className="flex items-center justify-center w-[44px] h-[44px] rounded-full bg-[#5CB338] hover:bg-[#4E9B2F] text-white shadow-xs transition-all active:scale-95 disabled:opacity-40 disabled:pointer-events-none cursor-pointer shrink-0"
+      >
+        {isLoading ? (
+          <Loader2 className="w-5 h-5 animate-spin" />
+        ) : (
+          <Send className="w-4 h-4 ml-0.5" />
+        )}
+      </button>
+    </form>
+  )
+
+  return (
+    <div className="flex flex-col h-full w-full min-h-0 relative overflow-hidden bg-transparent">
+      
+      {/* When NO messages yet: Pure Minimalist Gemini style in Antep theme */}
+      {messages.length === 0 ? (
+        <div className="flex-1 flex flex-col items-center justify-center px-4 w-full max-w-[760px] mx-auto text-center animate-in fade-in duration-400">
+          
+          {/* Headline matching Gemini's minimalist style: Nerden başliyak rafık? */}
+          <h1 className="text-3xl md:text-4xl font-normal tracking-tight text-foreground/90 mb-8">
+            Nerden başliyak <span className="text-primary font-medium">rafık?</span>
+          </h1>
+
+          {/* Centered Input Pill */}
+          <div className="w-full max-w-[680px]">
+            {renderInputForm(true)}
+          </div>
+
         </div>
-      </div>
+      ) : (
+        /* When messages exist: Full Chat History + Fixed Bottom Bar */
+        <>
+          <div 
+            ref={scrollContainerRef}
+            onScroll={handleScroll}
+            className="flex-1 overflow-y-auto min-h-0 w-full px-4 md:px-12 overscroll-contain"
+          >
+            <div className="flex flex-col py-8 gap-8 max-w-[850px] mx-auto min-h-full">
+              {messages.map((msg) => {
+                // Modern Minimal Typing Indicator
+                if (msg.role === "assistant" && !msg.content) {
+                  return (
+                    <div key={msg.id} className="flex w-full justify-start items-center py-2 animate-in fade-in duration-300">
+                      <div className="flex items-center gap-1.5 py-2 px-3.5 rounded-full bg-muted/40 border border-border/40">
+                        <span className="w-2 h-2 rounded-full bg-primary/70 animate-bounce [animation-delay:-0.3s]"></span>
+                        <span className="w-2 h-2 rounded-full bg-primary/70 animate-bounce [animation-delay:-0.15s]"></span>
+                        <span className="w-2 h-2 rounded-full bg-primary/70 animate-bounce"></span>
+                      </div>
+                    </div>
+                  )
+                }
+
+                // User Message (Crisp, clean bubble on the right)
+                if (msg.role === "user") {
+                  return (
+                    <div key={msg.id} className="flex w-full justify-end">
+                      <div className="max-w-[85%] md:max-w-[75%] px-5 py-3.5 rounded-[1.4rem] bg-white text-[#1F2937] border border-border/60 shadow-[0_2px_12px_rgba(0,0,0,0.03)] leading-relaxed">
+                        <p className="text-[15px]">{msg.content}</p>
+                        <div className="flex items-center justify-end gap-1.5 mt-2 text-[10.5px] text-muted-foreground/70">
+                          <span>{msg.time}</span>
+                          <CheckCheck className="w-3.5 h-3.5 text-primary" />
+                        </div>
+                      </div>
+                    </div>
+                  )
+                }
+
+                // Assistant Message: PURE FREE-FLOWING (NO ICON, NO 'BaklavAI' LABEL, NO BOX CONTAINER!)
+                return (
+                  <div key={msg.id} className="flex w-full justify-start items-start">
+                    <div className="flex-1 min-w-0">
+                      {/* Markdown Text directly rendered */}
+                      <div className="text-[15.5px] text-foreground/90 leading-relaxed markdown-content space-y-2.5">
+                        <ReactMarkdown
+                          components={{
+                            p: ({ children }) => <p className="leading-relaxed">{children}</p>,
+                            strong: ({ children }) => <strong className="font-semibold text-primary">{children}</strong>,
+                            ul: ({ children }) => <ul className="list-disc pl-5 my-1.5 space-y-1">{children}</ul>,
+                            ol: ({ children }) => <ol className="list-decimal pl-5 my-1.5 space-y-1">{children}</ol>,
+                            li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+                            h1: ({ children }) => <h1 className="text-lg font-bold text-foreground my-2">{children}</h1>,
+                            h2: ({ children }) => <h2 className="text-base font-bold text-foreground my-1.5">{children}</h2>,
+                            h3: ({ children }) => <h3 className="text-sm font-bold text-foreground my-1">{children}</h3>,
+                            blockquote: ({ children }) => (
+                              <blockquote className="border-l-3 border-primary/40 pl-3 italic my-1.5 text-muted-foreground">
+                                {children}
+                              </blockquote>
+                            ),
+                          }}
+                        >
+                          {msg.content}
+                        </ReactMarkdown>
+                      </div>
+
+                      {/* 4 Clean Minimal Action Buttons (Like, Dislike, Regenerate, Copy) */}
+                      <div className="flex items-center gap-1 mt-3 pt-1 text-muted-foreground/60 select-none">
+                        {/* 1. Like Button */}
+                        <button
+                          type="button"
+                          onClick={() => handleReaction(msg.id, "like")}
+                          className={`p-1.5 rounded-lg hover:bg-muted/70 hover:text-foreground transition-colors cursor-pointer ${
+                            reactions[msg.id] === "like" ? "text-primary bg-secondary/80" : ""
+                          }`}
+                          title="Cevabı Beğen"
+                        >
+                          <ThumbsUp className="w-[17px] h-[17px]" />
+                        </button>
+
+                        {/* 2. Dislike Button */}
+                        <button
+                          type="button"
+                          onClick={() => handleReaction(msg.id, "dislike")}
+                          className={`p-1.5 rounded-lg hover:bg-muted/70 hover:text-foreground transition-colors cursor-pointer ${
+                            reactions[msg.id] === "dislike" ? "text-red-500 bg-red-50" : ""
+                          }`}
+                          title="Cevabı Beğenme"
+                        >
+                          <ThumbsDown className="w-[17px] h-[17px]" />
+                        </button>
+
+                        {/* 3. Regenerate Button */}
+                        <button
+                          type="button"
+                          onClick={() => handleRegenerate(msg.id)}
+                          disabled={isLoading}
+                          className="p-1.5 rounded-lg hover:bg-muted/70 hover:text-foreground transition-colors cursor-pointer disabled:opacity-40"
+                          title="Cevabı Yeniden Oluştur"
+                        >
+                          <RotateCw className="w-[17px] h-[17px]" />
+                        </button>
+
+                        {/* 4. Copy Button */}
+                        <button
+                          type="button"
+                          onClick={() => handleCopy(msg.id, msg.content)}
+                          className="p-1.5 rounded-lg hover:bg-muted/70 hover:text-foreground transition-colors cursor-pointer"
+                          title="Cevabı Kopyala"
+                        >
+                          {copiedId === msg.id ? (
+                            <Check className="w-[17px] h-[17px] text-primary" />
+                          ) : (
+                            <Copy className="w-[17px] h-[17px]" />
+                          )}
+                        </button>
+
+                        {/* Subtle Timestamp */}
+                        <span className="text-[11px] text-muted-foreground/40 ml-2">
+                          {msg.time}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+              <div ref={messagesEndRef} className="h-2" />
+            </div>
+          </div>
+
+          {/* Floating Jump to Bottom Button */}
+          {showScrollBottom && (
+            <button
+              onClick={() => scrollToBottom(true)}
+              className="absolute bottom-24 right-8 md:right-16 z-30 p-2.5 rounded-full bg-white text-muted-foreground hover:text-primary shadow-lg border border-border/60 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+              title="En aşağı kaydır"
+            >
+              <ArrowDown className="w-4 h-4" />
+            </button>
+          )}
+
+          {/* Fixed Bottom Input Area (During active conversation) */}
+          <div className="shrink-0 w-full px-4 pt-2 pb-6 z-20 flex justify-center bg-gradient-to-t from-background via-background/95 to-transparent">
+            <div className="w-full max-w-[850px]">
+              {renderInputForm(false)}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }

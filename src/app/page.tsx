@@ -5,18 +5,17 @@ import { AddWordDialog } from "@/components/add-word-dialog";
 import { 
   SidebarDialog, 
   ChatsContent, 
-  DiscoverContent, 
-  SettingsContent, 
   HelpContent 
 } from "@/components/sidebar-dialogs";
+import Link from "next/link";
 import { 
   MessageSquarePlus, 
   MessageCircle, 
-  Compass, 
   Settings, 
   HelpCircle,
   User,
-  ChevronDown
+  ChevronDown,
+  BookOpen
 } from "lucide-react";
 
 import {
@@ -30,7 +29,7 @@ import {
 
 export default function Home() {
   const handleNewChat = () => {
-    window.location.reload();
+    window.dispatchEvent(new Event("reset-chat"));
   };
 
   return (
@@ -63,30 +62,17 @@ export default function Home() {
             <ChatsContent />
           </SidebarDialog>
 
-          {/* Keşfet Dialog */}
-          <SidebarDialog 
-            title="Gaziantep'i Keşfet" 
-            description="Yöresel kelimeler, deyimler ve popüler konular."
-            trigger={<SidebarButton icon={<Compass className="w-[18px] h-[18px]" />} label="Keşfet" />}
-          >
-            <DiscoverContent />
-          </SidebarDialog>
-          
-          {/* AddWordDialog inside SidebarButton look */}
-          <div className="w-full">
-            <AddWordDialog />
-          </div>
+          {/* Topluluk Sözlüğü Sayfası */}
+          <Link href="/sozluk" className="w-full block">
+            <SidebarButton icon={<BookOpen className="w-[18px] h-[18px]" />} label="Antep Sözlüğü" />
+          </Link>
 
           <div className="my-1 border-t border-border/30 mx-2"></div>
 
-          {/* Ayarlar Dialog */}
-          <SidebarDialog 
-            title="Profil Ayarları" 
-            description="Kullanıcı adı, e-posta ve şifre bilgilerinizi güncelleyin."
-            trigger={<SidebarButton icon={<Settings className="w-[18px] h-[18px]" />} label="Ayarlar" />}
-          >
-            <SettingsContent />
-          </SidebarDialog>
+          {/* Ayarlar → Profil Sayfası */}
+          <Link href="/profil" className="w-full block">
+            <SidebarButton icon={<Settings className="w-[18px] h-[18px]" />} label="Ayarlar" />
+          </Link>
 
           {/* Yardım Dialog */}
           <SidebarDialog 
@@ -100,16 +86,14 @@ export default function Home() {
         {/* Footer Profile Area */}
         <div className="p-6 pt-2">
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="w-full flex items-center justify-between px-4 py-3 bg-transparent hover:bg-muted/50 outline-none rounded-2xl transition-colors">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
-                    <User className="w-4 h-4" />
-                  </div>
-                  <span className="text-sm font-medium text-foreground/80">Kullanıcı</span>
+            <DropdownMenuTrigger className="w-full flex items-center justify-between px-4 py-3 bg-transparent hover:bg-muted/50 outline-none rounded-2xl transition-colors cursor-pointer">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
+                  <User className="w-4 h-4" />
                 </div>
-                <ChevronDown className="w-4 h-4 text-muted-foreground/60" />
-              </button>
+                <span className="text-sm font-medium text-foreground/80">Kullanıcı</span>
+              </div>
+              <ChevronDown className="w-4 h-4 text-muted-foreground/60" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-[240px] rounded-2xl p-2 shadow-lg">
               <DropdownMenuLabel className="font-normal">
@@ -119,29 +103,39 @@ export default function Home() {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="cursor-pointer rounded-xl">Profilimi Görüntüle</DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer rounded-xl">Abonelik (Premium)</DropdownMenuItem>
+              <Link href="/profil">
+                <DropdownMenuItem className="cursor-pointer rounded-xl">Profilimi Görüntüle</DropdownMenuItem>
+              </Link>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="cursor-pointer rounded-xl text-red-600 focus:text-red-600 focus:bg-red-50">Çıkış Yap</DropdownMenuItem>
+              <Link href="/profil">
+                <DropdownMenuItem className="cursor-pointer rounded-xl text-red-600 focus:text-red-600 focus:bg-red-50">Çıkış Yap</DropdownMenuItem>
+              </Link>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col h-full relative bg-transparent overflow-hidden">
+      <main className="flex-1 flex flex-col h-full relative bg-transparent overflow-hidden min-h-0">
         {/* Mobile Header (Hidden on Desktop) */}
-        <header className="md:hidden h-16 flex items-center justify-center border-b border-border/40 bg-card/80 backdrop-blur-md z-10 mx-2 rounded-b-3xl">
+        <header className="md:hidden h-16 shrink-0 flex items-center justify-between border-b border-border/40 bg-card/80 backdrop-blur-md z-10 px-4 mx-2 rounded-b-3xl">
           <div className="flex items-center gap-2">
             <div className="text-2xl">🥮</div>
             <h1 className="font-semibold text-lg tracking-tight">
               baklav<span className="text-primary font-bold">AI</span>
             </h1>
           </div>
+          <Link 
+            href="/sozluk"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary text-primary text-xs font-semibold hover:bg-secondary/80 transition-colors"
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+            <span>Sözlük</span>
+          </Link>
         </header>
 
         {/* Chat Interface */}
-        <div className="flex-1 w-full h-full">
+        <div className="flex-1 w-full h-full min-h-0 flex flex-col">
           <ChatInterface />
         </div>
       </main>

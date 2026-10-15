@@ -7,8 +7,8 @@ import {
   DialogTrigger,
   DialogClose,
 } from "@/components/ui/dialog"
-import { ReactNode } from "react"
-import { MessageCircle, Compass, Settings, HelpCircle, History } from "lucide-react"
+import { ReactElement, ReactNode } from "react"
+import { History } from "lucide-react"
 
 // Generic wrapper for our sidebar buttons that need dialogs
 export function SidebarDialog({
@@ -17,22 +17,20 @@ export function SidebarDialog({
   description,
   children
 }: {
-  trigger: ReactNode
+  trigger: ReactElement
   title: string
   description?: string
   children: ReactNode
 }) {
   return (
     <Dialog>
-      <DialogTrigger asChild>
-        {trigger}
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogTrigger render={trigger} />
+      <DialogContent className="sm:max-w-[480px] max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}
         </DialogHeader>
-        <div className="py-4">
+        <div className="py-4 overflow-y-auto flex-1">
           {children}
         </div>
       </DialogContent>
@@ -53,60 +51,23 @@ export function ChatsContent() {
         { title: "Sahre için mekan önerisi", time: "Dün, 09:15" },
         { title: "Yuvalama tarifi", time: "3 gün önce" },
       ].map((chat, i) => (
-        <DialogClose asChild key={i}>
-          <button 
-            onClick={() => sendChatMessage(chat.title)}
-            className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-left border border-transparent hover:border-border/50"
-          >
-            <History className="w-5 h-5 text-muted-foreground/60" />
-            <div className="flex flex-col">
-              <span className="text-sm font-medium text-foreground/90">{chat.title}</span>
-              <span className="text-[11px] text-muted-foreground">{chat.time}</span>
-            </div>
-          </button>
+        <DialogClose
+          key={i}
+          onClick={() => sendChatMessage(chat.title)}
+          className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-left border border-transparent hover:border-border/50 cursor-pointer w-full"
+        >
+          <History className="w-5 h-5 text-muted-foreground/60 shrink-0" />
+          <div className="flex flex-col text-left">
+            <span className="text-sm font-medium text-foreground/90">{chat.title}</span>
+            <span className="text-[11px] text-muted-foreground">{chat.time}</span>
+          </div>
         </DialogClose>
       ))}
     </div>
   )
 }
 
-// 2. Keşfet (Discover) Content
-export function DiscoverContent() {
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="space-y-2">
-        <h4 className="text-sm font-semibold text-primary">Günün Kelimesi</h4>
-        <DialogClose asChild>
-          <button 
-            onClick={() => sendChatMessage("Bana 'Sahan' kelimesinin anlamını Antep ağzıyla detaylıca anlatır mısın?")}
-            className="w-full text-left p-4 rounded-xl bg-secondary border border-primary/10 hover:bg-primary/10 transition-colors cursor-pointer"
-          >
-            <p className="font-bold text-lg text-foreground">Sahan</p>
-            <p className="text-sm text-foreground/80 mt-1">Bakır veya çelikten yapılmış, yemek yemeye yarayan yayvan kap.</p>
-          </button>
-        </DialogClose>
-      </div>
-      
-      <div className="space-y-2 mt-2">
-        <h4 className="text-sm font-semibold text-muted-foreground">Popüler Konular</h4>
-        <div className="flex flex-wrap gap-2">
-          {["Baklava Çeşitleri", "Tarihi Çarşılar", "Yöresel Deyimler", "Gaziantep Kalesi"].map((tag, i) => (
-            <DialogClose asChild key={i}>
-              <span 
-                onClick={() => sendChatMessage(tag + " hakkında sohbet edelim")}
-                className="px-3 py-1.5 bg-muted rounded-full text-xs font-medium text-muted-foreground cursor-pointer hover:bg-primary hover:text-white transition-colors"
-              >
-                #{tag}
-              </span>
-            </DialogClose>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// 3. Ayarlar (Settings) Content
+// 2. Ayarlar (Settings) Content
 export function SettingsContent() {
   return (
     <div className="flex flex-col gap-4">

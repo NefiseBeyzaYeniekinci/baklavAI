@@ -21,11 +21,28 @@ export function AddWordDialog() {
   const [meaning, setMeaning] = useState("")
 
   const handleSave = () => {
-    // In a real app, this would save to Firebase/Supabase
-    console.log("Saving word:", word, meaning)
-    setOpen(false)
-    setWord("")
-    setMeaning("")
+    if (!word.trim() || !meaning.trim()) return;
+
+    try {
+      const stored = localStorage.getItem("baklavai_custom_words");
+      const list = stored ? JSON.parse(stored) : [];
+      list.push({ word: word.trim(), meaning: meaning.trim() });
+      localStorage.setItem("baklavai_custom_words", JSON.stringify(list));
+      window.dispatchEvent(new Event("baklavai_words_changed"));
+      
+      // Send a friendly prompt to BaklavAI so it confirms learning it!
+      const wordText = word.trim();
+      const meaningText = meaning.trim();
+      window.dispatchEvent(new CustomEvent('send-chat-message', { 
+        detail: `Antep sözlüğüne yeni bir kelime ekledim: "${wordText}" (Anlamı: ${meaningText}). Bunu aklında tut rafık, bana bu kelimeyi kullanarak Antep ağzıyla güzel bir cümle kur!` 
+      }));
+    } catch (e) {
+      console.error("Kelime kaydedilemedi:", e);
+    }
+
+    setOpen(false);
+    setWord("");
+    setMeaning("");
   }
 
   return (
