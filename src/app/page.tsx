@@ -159,7 +159,7 @@ export default function Home() {
 
   if (isCheckingAuth) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-[#F8FAF8]">
+      <div className="flex h-[100dvh] w-full items-center justify-center bg-[#F8FAF8]">
         <div className="flex flex-col items-center gap-3 animate-in fade-in duration-200">
           <div className="text-4xl animate-bounce">🥮</div>
           <div className="font-semibold text-slate-700 text-sm tracking-wide">
@@ -171,7 +171,7 @@ export default function Home() {
   }
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-background text-foreground p-0 md:p-3 md:pl-0 gap-2">
+    <div className="flex h-[100dvh] w-full overflow-hidden bg-background text-foreground p-0 md:p-3 md:pl-0 gap-2">
       {/* Premium Floating Sidebar */}
       <aside className="hidden md:flex flex-col w-[300px] bg-card rounded-r-[2.5rem] shadow-[4px_0_24px_rgba(0,0,0,0.02)] overflow-hidden relative z-20">
         {/* Logo Area */}

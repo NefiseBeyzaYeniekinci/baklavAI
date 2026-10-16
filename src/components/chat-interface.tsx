@@ -586,7 +586,7 @@ export function ChatInterface() {
           )}
 
           {/* Fixed Bottom Input Area (During active conversation) */}
-          <div className="shrink-0 w-full px-3 sm:px-4 pt-2 pb-3 sm:pb-6 z-20 flex justify-center bg-gradient-to-t from-background via-background/95 to-transparent">
+          <div className="shrink-0 w-full px-3 sm:px-4 pt-2 pb-3 pb-[calc(12px+env(safe-area-inset-bottom))] sm:pb-6 z-20 flex justify-center bg-gradient-to-t from-background via-background/95 to-transparent">
             <div className="w-full max-w-[850px]">
               {renderInputForm(false)}
             </div>
