@@ -1,8 +1,12 @@
 "use client"
 
 import { useState, useRef, useEffect, useCallback } from "react"
-import { Send, Paperclip, CheckCheck, Loader2, ArrowDown, ThumbsUp, ThumbsDown, RotateCw, Copy, Check } from "lucide-react"
+import { Send, Paperclip, CheckCheck, Loader2, ArrowDown, ThumbsUp, ThumbsDown, RotateCw, Copy, Check, Lock } from "lucide-react"
 import ReactMarkdown from "react-markdown"
+import Link from "next/link"
+
+const GUEST_EMAIL = "misafir@baklavai.com"
+const GUEST_MESSAGE_LIMIT = 3
 
 type Message = {
   id: string
@@ -21,6 +25,8 @@ export function ChatInterface() {
   const sessionIdRef = useRef<string | null>(null)
   const messagesRef = useRef<Message[]>([])
   const [reactions, setReactions] = useState<Record<string, "like" | "dislike">>({})
+  const [showGuestLimitModal, setShowGuestLimitModal] = useState(false)
+  const [isGuest, setIsGuest] = useState(false)
 
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -35,6 +41,17 @@ export function ChatInterface() {
   useEffect(() => {
     messagesRef.current = messages
   }, [messages])
+
+  // Check if user is a guest
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("baklavai_profile")
+      if (saved) {
+        const profile = JSON.parse(saved)
+        setIsGuest(profile?.email === GUEST_EMAIL)
+      }
+    } catch {}
+  }, [])
 
   // Helper to persist current session to localStorage
   const persistSession = useCallback((sId: string, msgs: Message[]) => {
@@ -378,16 +395,31 @@ export function ChatInterface() {
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault()
     if (!input.trim() || isLoading) return
+
+    // Guest limit check: count only user messages
+    if (isGuest) {
+      const userMsgCount = messagesRef.current.filter(m => m.role === "user").length
+      if (userMsgCount >= GUEST_MESSAGE_LIMIT) {
+        setShowGuestLimitModal(true)
+        return
+      }
+    }
+
     const text = input
     setInput("")
     sendMessageToApi(text)
   }
 
   // Reusable input form
+  const guestUserMsgCount = messages.filter(m => m.role === "user").length
+  const isGuestLimited = isGuest && guestUserMsgCount >= GUEST_MESSAGE_LIMIT
+
   const renderInputForm = (isCentered = false) => (
     <form 
       onSubmit={handleSend} 
-      className={`flex items-center gap-3 bg-white rounded-full transition-all border border-border/60 focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/10 ${
+      className={`flex items-center gap-3 bg-white rounded-full transition-all border ${
+        isGuestLimited ? "border-orange-200 bg-orange-50/30" : "border-border/60 focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/10"
+      } ${
         isCentered 
           ? "p-2.5 pr-3 shadow-[0_6px_30px_rgba(0,0,0,0.06)]" 
           : "p-2 pr-2.5 shadow-[0_8px_30px_rgba(0,0,0,0.06)]"
@@ -406,20 +438,33 @@ export function ChatInterface() {
       <input
         value={input}
         onChange={(e) => setInput(e.target.value)}
-        placeholder={isLoading ? "BaklavAI cevap veriyor..." : "BaklavAI'ye bir şeyler sor rafık..."}
-        disabled={isLoading}
+        placeholder={
+          isGuestLimited
+            ? "Devam etmek için giriş yap..."
+            : isLoading
+            ? "BaklavAI cevap veriyor..."
+            : "BaklavAI'ye bir şeyler sor rafık..."
+        }
+        disabled={isLoading || isGuestLimited}
         autoFocus={isCentered}
         className="flex-1 bg-transparent border-0 outline-none text-base text-foreground placeholder:text-[#A0AEC0] disabled:opacity-60 min-w-0"
       />
       
-      {/* Send Button */}
+      {/* Send Button - lock icon when guest limited */}
       <button 
-        type="submit" 
-        disabled={!input.trim() || isLoading}
-        className="flex items-center justify-center w-[42px] h-[42px] sm:w-[44px] sm:h-[44px] rounded-full bg-[#5CB338] hover:bg-[#4E9B2F] text-white shadow-xs transition-all active:scale-95 disabled:opacity-40 disabled:pointer-events-none cursor-pointer shrink-0"
+        type={isGuestLimited ? "button" : "submit"}
+        onClick={isGuestLimited ? () => setShowGuestLimitModal(true) : undefined}
+        disabled={(!input.trim() || isLoading) && !isGuestLimited}
+        className={`flex items-center justify-center w-[42px] h-[42px] sm:w-[44px] sm:h-[44px] rounded-full text-white shadow-xs transition-all active:scale-95 cursor-pointer shrink-0 ${
+          isGuestLimited
+            ? "bg-orange-400 hover:bg-orange-500"
+            : "bg-[#5CB338] hover:bg-[#4E9B2F] disabled:opacity-40 disabled:pointer-events-none"
+        }`}
       >
         {isLoading ? (
           <Loader2 className="w-5 h-5 animate-spin" />
+        ) : isGuestLimited ? (
+          <Lock className="w-4 h-4" />
         ) : (
           <Send className="w-4 h-4 ml-0.5" />
         )}
@@ -429,6 +474,47 @@ export function ChatInterface() {
 
   return (
     <div className="flex flex-col h-full w-full min-h-0 relative overflow-hidden bg-transparent">
+
+      {/* Guest Limit Modal */}
+      {showGuestLimitModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-white w-full max-w-sm rounded-[2rem] p-7 border border-slate-100 shadow-2xl relative animate-in zoom-in-95 text-center">
+            <button
+              onClick={() => setShowGuestLimitModal(false)}
+              className="absolute top-4 right-4 p-2 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 cursor-pointer transition-colors"
+            >
+              <span className="text-lg leading-none">✕</span>
+            </button>
+
+            <div className="w-14 h-14 rounded-2xl bg-orange-50 flex items-center justify-center mx-auto mb-4 border border-orange-200">
+              <Lock className="w-7 h-7 text-orange-400" />
+            </div>
+
+            <h3 className="text-lg font-bold text-slate-900 mb-2">
+              Mesaj Hakkın Doldu
+            </h3>
+            <p className="text-sm text-slate-500 leading-relaxed mb-6">
+              Misafir olarak <span className="font-semibold text-slate-700">{GUEST_MESSAGE_LIMIT} mesaj</span> hakkın var. Sınırsız sohbet için hemen ücretsiz hesap oluştur! 🥮
+            </p>
+
+            <div className="flex flex-col gap-2.5">
+              <Link
+                href="/giris"
+                className="w-full py-3 px-6 rounded-full bg-[#5CB338] hover:bg-[#4EA12F] text-white font-bold text-sm shadow-md shadow-[#5CB338]/25 transition-all text-center"
+              >
+                Giriş Yap / Kayıt Ol
+              </Link>
+              <button
+                type="button"
+                onClick={() => setShowGuestLimitModal(false)}
+                className="w-full py-2.5 px-6 rounded-full border border-slate-200 text-slate-500 font-medium text-sm hover:bg-slate-50 transition-all cursor-pointer"
+              >
+                Vazgeç
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* When NO messages yet: Pure Minimalist Gemini style in Antep theme */}
       {messages.length === 0 ? (

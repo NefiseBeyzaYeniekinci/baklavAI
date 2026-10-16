@@ -265,9 +265,6 @@ export default function Home() {
                 <Link href="/profil">
                   <DropdownMenuItem className="cursor-pointer rounded-xl">Profilimi Görüntüle</DropdownMenuItem>
                 </Link>
-                <Link href="/giris">
-                  <DropdownMenuItem className="cursor-pointer rounded-xl font-medium text-primary">Giriş Yap / Hesap Değiştir</DropdownMenuItem>
-                </Link>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <div onClick={handleLogout} className="cursor-pointer">
@@ -307,13 +304,10 @@ export default function Home() {
               <BookOpen className="w-3.5 h-3.5" />
               <span>Sözlük</span>
             </Link>
-            <Link 
-              href="/giris"
-              className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors shadow-xs"
-            >
+            <div className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold">
               <User className="w-3.5 h-3.5" />
-              <span>{userProfile.name.split(" ")[0] || "Giriş"}</span>
-            </Link>
+              <span>{userProfile.name.split(" ")[0] || "Profil"}</span>
+            </div>
           </div>
         </header>
 
@@ -412,20 +406,13 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                  <Link
-                    href="/giris"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="py-2 text-center text-xs font-medium bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors"
-                  >
-                    Giriş / Hesap
-                  </Link>
+                <div>
                   <button
                     onClick={() => {
                       setMobileMenuOpen(false);
                       handleLogout();
                     }}
-                    className="py-2 text-center text-xs font-medium border border-border text-red-600 rounded-xl hover:bg-red-50 transition-colors cursor-pointer"
+                    className="w-full py-2 text-center text-xs font-medium border border-border text-red-600 rounded-xl hover:bg-red-50 transition-colors cursor-pointer"
                   >
                     Çıkış Yap
                   </button>
