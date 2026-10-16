@@ -19,6 +19,7 @@ export function ChatInterface() {
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null)
   const sessionIdRef = useRef<string | null>(null)
+  const messagesRef = useRef<Message[]>([])
   const [reactions, setReactions] = useState<Record<string, "like" | "dislike">>({})
 
   const scrollContainerRef = useRef<HTMLDivElement>(null)
@@ -29,6 +30,11 @@ export function ChatInterface() {
   useEffect(() => {
     sessionIdRef.current = currentSessionId
   }, [currentSessionId])
+
+  // Keep messagesRef in sync so sendMessageToApi always reads latest messages
+  useEffect(() => {
+    messagesRef.current = messages
+  }, [messages])
 
   // Helper to persist current session to localStorage
   const persistSession = useCallback((sId: string, msgs: Message[]) => {
@@ -179,7 +185,7 @@ export function ChatInterface() {
       localStorage.setItem("baklavai_active_session_id", sId)
     }
 
-    const currentBase = customHistory || messages
+    const currentBase = customHistory || messagesRef.current
     const updatedMessages = [...currentBase, userMessage]
     setMessages(updatedMessages)
     setIsLoading(true)
@@ -353,7 +359,7 @@ export function ChatInterface() {
 
     window.addEventListener('send-chat-message', handleSendCustomMessage as EventListener)
     return () => window.removeEventListener('send-chat-message', handleSendCustomMessage as EventListener)
-  }, [messages, isLoading])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Check URL query parameter on load (e.g. redirected from /kesfet with ?q=...)
   useEffect(() => {
